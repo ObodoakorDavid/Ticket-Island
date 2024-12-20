@@ -3,8 +3,8 @@ import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Event from "../models/event.model.js";
 
-export async function createEvent(eventData, userId) {
-  const event = new Event({ ...eventData, userId });
+export async function createEvent(eventData, userId, userProfileId) {
+  const event = new Event({ ...eventData, userId, user: userProfileId });
   await event.save();
   return ApiSuccess.ok("Event Created Successfully", { event });
 }

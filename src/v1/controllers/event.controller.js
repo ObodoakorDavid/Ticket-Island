@@ -3,8 +3,12 @@ import eventService from "../services/event.service.js";
 
 export const createEvent = asyncWrapper(async (req, res) => {
   const eventData = req.body;
-  const { userId } = req.user;
-  const result = await eventService.createEvent(eventData, userId);
+  const { userId, userProfileId } = req.user;
+  const result = await eventService.createEvent(
+    eventData,
+    userId,
+    userProfileId
+  );
   res.status(201).json(result);
 });
 

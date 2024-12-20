@@ -11,6 +11,9 @@ import { errorMiddleware } from "./src/middlewares/error.js";
 
 import authRoutesV1 from "./src/v1/routes/auth.routes.js";
 import eventRoutesV1 from "./src/v1/routes/event.routes.js";
+import ticketRoutesV1 from "./src/v1/routes/ticket.routes.js";
+import codeRoutesV1 from "./src/v1/routes/code.routes.js";
+import waitlistRoutesV1 from "./src/v1/routes/waitlist.routes.js";
 import { isAuth } from "./src/middlewares/auth.js";
 
 const app = express();
@@ -28,6 +31,9 @@ app.use(morgan("dev"));
 
 app.use("/api/v1/auth", authRoutesV1);
 app.use("/api/v1/events", isAuth, eventRoutesV1);
+app.use("/api/v1/tickets", ticketRoutesV1);
+app.use("/api/v1/codes", isAuth, codeRoutesV1);
+app.use("/api/v1/waitlist", isAuth, waitlistRoutesV1);
 // app.use("/api/v1/admin", adminRoutes);
 app.use(notFound);
 app.use(errorMiddleware);

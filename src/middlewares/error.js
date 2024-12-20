@@ -31,9 +31,12 @@ export const errorMiddleware = (err, req, res, next) => {
 
   if (code === 11000) {
     status_code = 409;
-    const { email } = keyValue;
+    const { email, codeName } = keyValue;
     if (email) {
       message = "User with this email already exists";
+    }
+    if (codeName) {
+      message = "A promo code with this name already exists";
     }
   }
 

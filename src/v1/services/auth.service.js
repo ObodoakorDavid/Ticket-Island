@@ -21,7 +21,7 @@ export async function findUserProfileByIdOrEmail(identifier) {
   const isObjectId = mongoose.Types.ObjectId.isValid(identifier);
   const userProfile = await UserProfile.findOne(
     isObjectId ? { userId: identifier } : { email: identifier }
-  ).select("-_id");
+  );
 
   if (!userProfile) {
     throw ApiError.notFound("User Not Found");
@@ -63,7 +63,10 @@ export async function register(userData = {}) {
     });
 
     const token = generateToken(
-      { email: user[0].email, userId: user[0]._id },
+      {
+        email: user[0].email,
+        userId: user[0]._id,
+      },
       "1h"
     );
 
@@ -100,7 +103,10 @@ export async function login(userData = {}) {
     throw ApiError.forbidden("Email Not Verified");
   }
 
-  const token = generateToken({ userId: user._id });
+  const token = generateToken({
+    userId: user._id,
+    userProfileId: userProfile._id,
+  });
   return ApiSuccess.ok("Login Successful", {
     user: { email: user.email, id: user._id },
     token,

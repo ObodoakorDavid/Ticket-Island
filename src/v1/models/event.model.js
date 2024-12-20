@@ -4,6 +4,16 @@ const { Schema } = mongoose;
 
 const eventSchema = new Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserProfile",
+      required: true,
+    },
     photo: {
       type: String,
       required: true,
@@ -92,12 +102,14 @@ const eventSchema = new Schema(
       type: Date,
       default: Date.now,
     },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     isDeleted: { type: Boolean, default: false },
+    availableCodes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Code",
+        required: true,
+      },
+    ],
   },
   {
     timestamps: true,
