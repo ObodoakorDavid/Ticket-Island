@@ -1,14 +1,16 @@
 import axios from "axios";
-import ApiError from "./apiError";
+import ApiError from "./apiError.js";
+import dotenv from "dotenv";
+dotenv.config();
 
-export const payWithPayStack = async (email, amount, orderId, device) => {
+export const payWithPayStack = async (email, amount, ticketId) => {
   try {
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email,
         amount: amount * 100,
-        callback_url: `${process.env.SERVER_BASE_URL}/verify-payment?orderId=${orderId}&device=${device}`,
+        callback_url: `${process.env.SERVER_BASE_URL}/api/v1/tickets/verify?ticketId=${ticketId}`,
       },
       {
         headers: {

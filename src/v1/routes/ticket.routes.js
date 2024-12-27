@@ -6,6 +6,7 @@ import {
   getTicket,
   updateTicket,
   deleteTicket,
+  verifyTicketPayment,
 } from "../controllers/ticket.controller.js";
 import { ticketValidator } from "../validators/ticket.validator.js";
 import { isAuth } from "../../middlewares/auth.js";
@@ -17,6 +18,8 @@ router
   .post(ticketValidator, isAuth, createTicket)
   .get(isAuth, getAllTickets)
   .all(methodNotAllowed);
+
+router.route("/verify").get(verifyTicketPayment).all(methodNotAllowed);
 
 router
   .route("/:ticketId")

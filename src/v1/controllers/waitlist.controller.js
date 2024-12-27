@@ -10,6 +10,7 @@ export const addToWaitlist = asyncWrapper(async (req, res) => {
 
 // Controller to get all users in the waitlist
 export const getAllWaitlist = asyncWrapper(async (req, res) => {
-  const result = await waitlistService.getAllWaitlist();
+  const query = req.query;
+  const result = await waitlistService.getAllWaitlist(query);
   res.status(200).json(result);
 });

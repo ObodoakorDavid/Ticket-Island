@@ -12,6 +12,13 @@ export const createTicket = asyncWrapper(async (req, res) => {
   res.status(201).json(result);
 });
 
+export const verifyTicketPayment = asyncWrapper(async (req, res) => {
+  const { ticketId, trxref } = req.query;
+  const result = await ticketService.handlePaymentSuccess(ticketId, trxref);
+  //redirect user to frontend
+  res.status(201).json(result);
+});
+
 export const getAllTickets = asyncWrapper(async (req, res) => {
   const query = req.query;
   const result = await ticketService.getAllTickets(query);

@@ -1,5 +1,6 @@
 import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
+import { paginate } from "../../utils/paginate.js";
 import Waitlist from "../models/waitlist.model.js";
 
 export async function addToWaitlist(waitlistData) {
@@ -10,9 +11,21 @@ export async function addToWaitlist(waitlistData) {
   });
 }
 
-export async function getAllWaitlist() {
-  const waitlist = await Waitlist.find();
-  return ApiSuccess.ok("Waitlist Retrieved Successfully", { waitlist });
+export async function getAllWaitlist(query) {
+  const { page = 1, limit = 10, search } = query;
+
+  const filterQuery = {};
+
+  const { documents: waitlist, pagination } = await paginate(
+    Waitlist,
+    filterQuery,
+    page,
+    limit
+  );
+  return ApiSuccess.ok("Waitlist users Retrieved Successfully", {
+    waitlist,
+    pagination,
+  });
 }
 
 const waitlistService = {

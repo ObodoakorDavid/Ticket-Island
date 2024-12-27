@@ -30,13 +30,17 @@ const ticketSchema = new Schema(
     },
     qrCode: {
       type: String, // Store the QR code as a string (e.g., base64 encoded data or URL).
-      required: true,
     },
     isUsed: {
       type: Boolean,
       default: false,
     },
     isDeleted: { type: Boolean, default: false },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed"], // You can define any status you need
+      default: "pending", // Set the default status to 'pending' when ticket is created
+    },
   },
   {
     timestamps: true,

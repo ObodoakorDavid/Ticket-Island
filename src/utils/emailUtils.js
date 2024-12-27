@@ -24,6 +24,9 @@ const OTPTemplate = compileTemplate(
 const MagicLinkTemplate = compileTemplate(
   path.join(__dirname, "..", "templates", "MagicLinkEmail.html")
 );
+const QRCodeTemplate = compileTemplate(
+  path.join(__dirname, "..", "templates", "QRCode.html")
+);
 
 const sendEmail = async ({ to, subject, text, html, from = defaultSender }) => {
   const mailOptions = { from, to, subject, text, html };
@@ -54,4 +57,30 @@ const sendMagicLinkEmail = async (email, userName, magicLink) => {
   return sendEmail({ to: email, subject, text: emailText, html });
 };
 
-export { sendEmail, sendOTPEmail, sendMagicLinkEmail };
+const sendQRCodeEmail = async (
+  email,
+  userName,
+  qrCodeUrl,
+  eventName,
+  pdfPath
+) => {
+  const subject = "Your Event Ticket";
+  const date = new Date().getFullYear();
+  const emailText = `Hello ${userName},\n\nHere is your ticket for ${eventName}. Please use the attached QR code for entry.`;
+  const html = QRCodeTemplate({ userName, qrCodeUrl, eventName, date });
+
+  return sendEmail({
+    to: email,
+    subject,
+    text: emailText,
+    html,
+    attachments: [
+      {
+        filename: `ticket-${eventName}.pdf`,
+        path: pdfPath,
+      },
+    ],
+  });
+};
+
+export { sendEmail, sendOTPEmail, sendMagicLinkEmail, sendQRCodeEmail };

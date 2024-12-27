@@ -31,7 +31,6 @@ export async function findUserProfileByIdOrEmail(identifier) {
 }
 
 export async function register(userData = {}) {
-  console.time("test");
   const { password, joinMailingList } = userData;
   const hashedPassword = await hashPassword(password);
 
@@ -77,8 +76,6 @@ export async function register(userData = {}) {
       userProfile[0].firstName,
       magicLink
     );
-
-    console.timeEnd("test");
 
     await session.commitTransaction();
     return ApiSuccess.created(
@@ -217,3 +214,18 @@ export async function addUserToMailingList(userData = {}) {
 
   return ApiSuccess.ok("User opted not to join the mailing list");
 }
+
+const authService = {
+  findUserByEmail,
+  findUserProfileByIdOrEmail,
+  register,
+  login,
+  sendOTP,
+  verifyOTP,
+  forgotPassword,
+  resetPassword,
+  verifyEmailToken,
+  addUserToMailingList,
+};
+
+export default authService;
