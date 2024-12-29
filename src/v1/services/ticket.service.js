@@ -5,89 +5,161 @@ import { payWithPayStack, verifyPayStackPayment } from "../../utils/payment.js";
 import Ticket from "../models/ticket.model.js";
 import authService from "../../v1/services/auth.service.js";
 import eventService from "../../v1/services/event.service.js";
-import QRCode from "qrcode"; // You'll need a library to generate QR codes, like qrcode
+import QRCode from "qrcode";
 import { sendQRCodeEmail } from "../../utils/emailUtils.js";
 import { generateTicketPDF } from "../../utils/generateOTP.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getCodeByName } from "./code.service.js";
+import Transaction from "../models/transaction.model.js";
+import fs from "fs";
 
-export async function createTicket(ticketData, userId, userProfileId) {
+export async function buyTicket(ticketData, userId, userProfileId) {
   const { data } = await eventService.getEvent(ticketData.eventId);
   const event = data.event;
 
-  const ticket = new Ticket({
+  const transaction = new Transaction({
     eventId: event._id,
     userId,
     user: userProfileId,
-    ticketPrice: event.ticketPrice,
+    basePrice: event.ticketPrice * ticketData.unit,
+    netPrice: event.ticketPrice * ticketData.unit,
     paymentStatus: "pending",
+    unit: ticketData.unit,
   });
 
+  let priceToPay = event.ticketPrice * ticketData.unit;
+
+  if (ticketData?.promoCode) {
+    const { data } = await getCodeByName(ticketData?.promoCode);
+    const code = data.code;
+    transaction.isPromoApplied = true;
+    transaction.promoCode = ticketData.promoCode;
+
+    const totalAmount = event.ticketPrice * ticketData.unit;
+    const totalDiscount = code.discount * ticketData.unit;
+    transaction.netPrice = totalAmount - totalDiscount;
+    priceToPay = totalAmount - totalDiscount;
+  }
   const user = await authService.findUserProfileByIdOrEmail(userId);
 
   const { authorizationUrl } = await payWithPayStack(
     user.email,
-    ticket.ticketPrice,
-    ticket._id
+    priceToPay,
+    transaction._id
   );
 
-  await ticket.save();
-  return ApiSuccess.ok("Ticket Created Successfully", {
-    ticket,
+  await transaction.save();
+  return ApiSuccess.ok("Transaction Initiated", {
+    transaction,
     authorizationUrl,
   });
 }
 
-export async function handlePaymentSuccess(ticketId, transactionRef) {
-  console.log({ ticketId, transactionRef });
+export async function handlePaymentSuccess(transactionId, transactionRef) {
+  console.log({ transactionId, transactionRef });
 
-  const ticket = await Ticket.findById(ticketId).populate("user eventId");
-  if (!ticket) throw ApiError.notFound("Ticket not found");
+  const existingTransaction = await Transaction.findOne({
+    reference: transactionRef,
+  });
+  if (existingTransaction) {
+    throw ApiError.badRequest("Transaction reference has already been used.");
+  }
 
-  // const { data } = await verifyPayStackPayment(transactionRef);
-
-  // console.log(data);
-
-  // if (data?.status !== "success") {
-  //   throw ApiError.badRequest("Transasction Reference Invalid");
-  // }
-  // Generate a QR code (could be base64 or a URL to the QR code image)
-  const qrCodeData = await QRCode.toDataURL(
-    `${process.env.SERVER_BASE_URL}/api/v1/tickets/${ticket._id.toString()}`
+  const transaction = await Transaction.findById(transactionId).populate(
+    "eventId user"
   );
 
-  // console.log(qrCodeData);
+  if (!transaction) throw ApiError.notFound("Transaction not found");
 
-  // Update the ticket with the payment status and the generated QR code
-  ticket.paymentStatus = "paid";
-  ticket.qrCode = qrCodeData;
+  const { data } = await verifyPayStackPayment(transactionRef);
 
-  await ticket.save();
+  console.log(data?.status);
 
-  const userEmail = ticket.user.email;
-  const userFirstName = ticket.user.firstName;
-  const eventName = ticket.eventId.title;
+  if (data?.status !== "success") {
+    throw ApiError.badRequest("Transasction Reference Invalid");
+  }
+
+  if (data?.amount !== transaction.netPrice) {
+    throw ApiError.badRequest("Reference Mismatch");
+  }
+
+  // Update the transaction with the payment status
+  transaction.status = "success";
+  transaction.reference = transactionRef;
+  await transaction.save();
+
+  const userEmail = transaction.user.email;
+  const userFirstName = transaction.user.firstName;
+  const eventName = transaction.eventId.title;
+  const numberOfTickets = transaction.unit;
 
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const pdfDir = path.join(__dirname, "../../storage/");
 
-  // Generate PDF
-  const pdfPath = path.join(__dirname, `../../storage/eTicket.pdf`);
+  const ticketPaths = [];
+  const createdTickets = [];
 
-  console.log(pdfPath);
+  for (let i = 0; i < numberOfTickets; i++) {
+    // Step 1: Create the ticket in the database
+    const newTicket = await Ticket.create({
+      eventId: transaction.eventId._id,
+      userId: transaction.user._id,
+      user: transaction.user._id,
+      basePrice: transaction.basePrice,
+      discountCodeUsed: transaction.isPromoApplied,
+      netPrice: transaction.netPrice / numberOfTickets,
+    });
 
-  await generateTicketPDF({ userFirstName, eventName, qrCodeData, pdfPath });
+    if (transaction.isPromoApplied) {
+      newTicket.promoCode = transaction.promoCode;
+    }
 
-  await sendQRCodeEmail(
-    userEmail,
-    userFirstName,
-    qrCodeData,
-    eventName,
-    pdfPath
-  );
+    createdTickets.push(newTicket);
+
+    // Step 2: Generate QR code using the ticket ID
+    const qrCodeData = await QRCode.toDataURL(
+      `${
+        process.env.SERVER_BASE_URL
+      }/api/v1/tickets/${newTicket._id.toString()}`
+    );
+
+    // Update the ticket with the generated QR code
+    newTicket.qrCode = qrCodeData;
+    await newTicket.save();
+
+    // Step 3: Generate PDF for each ticket
+    const pdfPath = path.join(pdfDir, `eTicket_${newTicket._id}.pdf`);
+    await generateTicketPDF({ userFirstName, eventName, qrCodeData, pdfPath });
+
+    ticketPaths.push(pdfPath);
+  }
+
+  // Attach tickets to the transaction
+  transaction.tickets = createdTickets.map((ticket) => ticket._id);
+  await transaction.save();
+
+  // Send all tickets via email
+  await sendQRCodeEmail(userEmail, userFirstName, ticketPaths, eventName);
+
+  // Step 4: Delete the PDFs from storage after sending the email
+  try {
+    for (const ticketPath of ticketPaths) {
+      fs.unlink(ticketPath, (err) => {
+        if (err) {
+          console.error(`Error deleting file ${ticketPath}:`, err);
+        } else {
+          console.log(`Successfully deleted ${ticketPath}`);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error deleting files from storage:", error);
+  }
 
   return ApiSuccess.ok(
     "Payment Successful, Ticket has been to sent to your email",
-    { ticket }
+    data
   );
 }
 
@@ -161,7 +233,7 @@ export async function deleteTicket(ticketId) {
 }
 
 const ticketService = {
-  createTicket,
+  buyTicket,
   getAllTickets,
   getTicket,
   updateTicket,

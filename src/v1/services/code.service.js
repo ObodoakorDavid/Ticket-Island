@@ -9,10 +9,10 @@ export async function createCode(codeData, userId, userProfileId) {
   return ApiSuccess.ok("Code Created Successfully", { code });
 }
 
-export async function getAllCodes(query) {
+export async function getAllCodes(query, userId) {
   const { page = 1, limit = 10, search, ...filters } = query;
 
-  const filterQuery = { isDeleted: false };
+  const filterQuery = { isDeleted: false, userId };
 
   if (search) {
     const searchQuery = {
@@ -51,6 +51,14 @@ export async function getCode(codeId) {
   });
 }
 
+export async function getCodeByName(codeName) {
+  const code = await Code.findOne({ codeName, isDeleted: false });
+  if (!code) throw ApiError.notFound("Code not found");
+  return ApiSuccess.ok("Code Retrieved Successfully", {
+    code,
+  });
+}
+
 export async function updateCode(codeId, data) {
   const code = await Code.findOneAndUpdate(
     { _id: codeId, isDeleted: false },
@@ -83,6 +91,7 @@ const codeService = {
   getCode,
   updateCode,
   deleteCode,
+  getCodeByName,
 };
 
 export default codeService;

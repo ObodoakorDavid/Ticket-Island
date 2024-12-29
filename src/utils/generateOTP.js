@@ -15,7 +15,7 @@ const generateOTP = () => {
 export default generateOTP;
 
 export const generateTicketPDF = ({
-  firstName,
+  userFirstName,
   eventName,
   qrCodeData,
   pdfPath,
@@ -29,7 +29,7 @@ export const generateTicketPDF = ({
     doc.fontSize(20).text("Event Ticket", { align: "center" });
     doc.moveDown();
 
-    doc.fontSize(14).text(`Name: ${firstName}`);
+    doc.fontSize(14).text(`Name: ${userFirstName}`);
     doc.text(`Event: ${eventName}`);
     doc.text(`Date: ${new Date().toLocaleDateString()}`);
     doc.moveDown();

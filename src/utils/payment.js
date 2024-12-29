@@ -53,6 +53,11 @@ export const verifyPayStackPayment = async (reference) => {
       return { message: "Payment failed", data: { status: "failed" } };
     }
   } catch (error) {
-    throw error;
+    const { message } = error?.response?.data;
+    if (message) {
+      throw ApiError.badRequest(message);
+    }
+
+    throw ApiError.badRequest("Verification Failed" + error?.response?.data);
   }
 };

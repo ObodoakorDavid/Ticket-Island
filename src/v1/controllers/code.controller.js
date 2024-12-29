@@ -10,7 +10,8 @@ export const createCode = asyncWrapper(async (req, res) => {
 
 export const getAllCodes = asyncWrapper(async (req, res) => {
   const query = req.query;
-  const result = await codeService.getAllCodes(query);
+  const { userId } = req.user;
+  const result = await codeService.getAllCodes(query, userId);
   res.status(200).json(result);
 });
 

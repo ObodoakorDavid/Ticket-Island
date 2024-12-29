@@ -28,8 +28,15 @@ const QRCodeTemplate = compileTemplate(
   path.join(__dirname, "..", "templates", "QRCode.html")
 );
 
-const sendEmail = async ({ to, subject, text, html, from = defaultSender }) => {
-  const mailOptions = { from, to, subject, text, html };
+const sendEmail = async ({
+  to,
+  subject,
+  text,
+  html,
+  from = defaultSender,
+  attachments = [],
+}) => {
+  const mailOptions = { from, to, subject, text, html, attachments };
   const info = await transporter.sendMail(mailOptions);
   console.log("Email sent:", info.response);
   return info;
@@ -57,29 +64,24 @@ const sendMagicLinkEmail = async (email, userName, magicLink) => {
   return sendEmail({ to: email, subject, text: emailText, html });
 };
 
-const sendQRCodeEmail = async (
-  email,
-  userName,
-  qrCodeUrl,
-  eventName,
-  pdfPath
-) => {
+const sendQRCodeEmail = async (email, userName, ticketPaths, eventName) => {
   const subject = "Your Event Ticket";
   const date = new Date().getFullYear();
   const emailText = `Hello ${userName},\n\nHere is your ticket for ${eventName}. Please use the attached QR code for entry.`;
-  const html = QRCodeTemplate({ userName, qrCodeUrl, eventName, date });
+  const html = QRCodeTemplate({ userName, eventName, date });
+
+  const attachments = ticketPaths.map((ticketPath, index) => ({
+    filename: `eTicket_${index + 1}.pdf`,
+    path: ticketPath,
+    contentType: "application/pdf",
+  }));
 
   return sendEmail({
     to: email,
     subject,
     text: emailText,
     html,
-    attachments: [
-      {
-        filename: `ticket-${eventName}.pdf`,
-        path: pdfPath,
-      },
-    ],
+    attachments: attachments,
   });
 };
 

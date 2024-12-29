@@ -1,12 +1,12 @@
 import express from "express";
 import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
 import {
-  createTicket,
   getAllTickets,
   getTicket,
   updateTicket,
   deleteTicket,
   verifyTicketPayment,
+  buyTicket,
 } from "../controllers/ticket.controller.js";
 import { ticketValidator } from "../validators/ticket.validator.js";
 import { isAuth } from "../../middlewares/auth.js";
@@ -15,7 +15,7 @@ const router = express.Router();
 
 router
   .route("/")
-  .post(ticketValidator, isAuth, createTicket)
+  .post(ticketValidator, isAuth, buyTicket)
   .get(isAuth, getAllTickets)
   .all(methodNotAllowed);
 
