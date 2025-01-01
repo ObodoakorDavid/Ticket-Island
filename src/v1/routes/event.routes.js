@@ -8,20 +8,21 @@ import {
   deleteEvent,
 } from "../controllers/event.controller.js";
 import { eventValidator } from "../validators/event.validator.js";
+import { isAuth } from "../../middlewares/auth.js";
 
 const router = express.Router();
 
 router
   .route("/")
-  .post(eventValidator, createEvent)
+  .post(eventValidator, isAuth, createEvent)
   .get(getAllEvents)
   .all(methodNotAllowed);
 
 router
   .route("/:eventId")
-  .get(getEvent)
-  .put(updateEvent)
-  .delete(deleteEvent)
+  .get(isAuth, getEvent)
+  .put(isAuth, updateEvent)
+  .delete(isAuth, deleteEvent)
   .all(methodNotAllowed);
 
 export default router;
