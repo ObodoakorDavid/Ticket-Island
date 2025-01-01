@@ -33,7 +33,7 @@ app.use("/api/v1/auth", authRoutesV1);
 app.use("/api/v1/events", isAuth, eventRoutesV1);
 app.use("/api/v1/tickets", ticketRoutesV1);
 app.use("/api/v1/codes", isAuth, codeRoutesV1);
-app.use("/api/v1/waitlist", isAuth, waitlistRoutesV1);
+app.use("/api/v1/waitlist", waitlistRoutesV1);
 // app.use("/api/v1/admin", adminRoutes);
 app.use(notFound);
 app.use(errorMiddleware);
