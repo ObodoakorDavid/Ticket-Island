@@ -16,14 +16,14 @@ const router = express.Router();
 router
   .route("/")
   .post(ticketValidator, isAuth, buyTicket)
-  .get(isAuth, getAllTickets)
+  .get(getAllTickets)
   .all(methodNotAllowed);
 
 router.route("/verify").get(verifyTicketPayment).all(methodNotAllowed);
 
 router
   .route("/:ticketId")
-  .get(isAuth, getTicket)
+  .get(getTicket)
   .put(isAuth, updateTicket)
   .delete(deleteTicket)
   .all(methodNotAllowed);
