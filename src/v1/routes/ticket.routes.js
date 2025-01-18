@@ -25,7 +25,7 @@ router
   .route("/:ticketId")
   .get(getTicket)
   .put(isAuth, updateTicket)
-  .delete(deleteTicket)
+  .delete(isAuth, deleteTicket)
   .all(methodNotAllowed);
 
 export default router;

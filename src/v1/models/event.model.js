@@ -59,10 +59,18 @@ const eventSchema = new Schema(
       type: String,
       required: true,
     },
-    descriptionToLocation: {
-      type: String,
-      required: true,
-    },
+    direction: [
+      {
+        name: {
+          type: String,
+          required: true,
+        },
+        description: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     locationURL: {
       type: String,
       required: true,
@@ -110,6 +118,20 @@ const eventSchema = new Schema(
         required: true,
       },
     ],
+    category: {
+      type: String,
+      required: true,
+    },
+    pricingPlan: {
+      type: String,
+      enum: ["bronze", "silver", "gold"],
+      required: true,
+    },
+    commissionBornedBy: {
+      type: String,
+      enum: ["bearer", "customer"],
+      required: true,
+    },
   },
   {
     timestamps: true,

@@ -7,7 +7,10 @@ import {
   updateEvent,
   deleteEvent,
 } from "../controllers/event.controller.js";
-import { eventValidator } from "../validators/event.validator.js";
+import {
+  eventUpdateValidator,
+  eventValidator,
+} from "../validators/event.validator.js";
 import { isAuth } from "../../middlewares/auth.js";
 
 const router = express.Router();
@@ -21,7 +24,7 @@ router
 router
   .route("/:eventId")
   .get(isAuth, getEvent)
-  .put(isAuth, updateEvent)
+  .patch(isAuth, eventUpdateValidator, updateEvent)
   .delete(isAuth, deleteEvent)
   .all(methodNotAllowed);
 

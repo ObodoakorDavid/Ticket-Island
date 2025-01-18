@@ -27,7 +27,8 @@ export const getEvent = asyncWrapper(async (req, res) => {
 export const updateEvent = asyncWrapper(async (req, res) => {
   const { eventId } = req.params;
   const eventData = req.body;
-  const result = await eventService.updateEvent(eventId, eventData);
+  const { userId } = req.user;
+  const result = await eventService.updateEvent(eventId, eventData, userId);
   res.status(200).json(result);
 });
 

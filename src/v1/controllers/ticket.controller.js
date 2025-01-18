@@ -34,12 +34,14 @@ export const getTicket = asyncWrapper(async (req, res) => {
 export const updateTicket = asyncWrapper(async (req, res) => {
   const { ticketId } = req.params;
   const ticketData = req.body;
-  const result = await ticketService.updateTicket(ticketId, ticketData);
+  const { userId } = req.user;
+  const result = await ticketService.updateTicket(ticketId, ticketData, userId);
   res.status(200).json(result);
 });
 
 export const deleteTicket = asyncWrapper(async (req, res) => {
   const { ticketId } = req.params;
-  const result = await ticketService.deleteTicket(ticketId);
+  const { userId } = req.user;
+  const result = await ticketService.deleteTicket(ticketId, userId);
   res.status(200).json(result);
 });

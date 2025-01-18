@@ -45,6 +45,11 @@ const UserProfileSchema = new Schema(
       default:
         "https://res.cloudinary.com/demmgc49v/image/upload/v1695969739/default-avatar_scnpps.jpg",
     },
+    balance: {
+      type: Number,
+      default: 0, // Default balance set to 0
+      min: [0, "Balance cannot be less than 0"], // Optional: prevent negative balance
+    },
   },
   {
     timestamps: true,

@@ -49,6 +49,17 @@ const transactionSchema = new Schema(
       enum: ["pending", "success", "failed"],
       default: "pending",
     },
+    commissionAmount: {
+      type: Number,
+      required: true,
+      min: [0, "Net price cannot be negative"],
+      default: 0,
+    },
+    commissionBornedBy: {
+      type: String,
+      enum: ["bearer", "customer"],
+      required: true,
+    },
     reference: {
       type: String,
       required: false,

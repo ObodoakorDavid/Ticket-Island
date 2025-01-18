@@ -4,6 +4,8 @@ import { paginate } from "../../utils/paginate.js";
 import Event from "../models/event.model.js";
 
 export async function createEvent(eventData, userId, userProfileId) {
+  console.log(userProfileId);
+
   const event = new Event({ ...eventData, userId, user: userProfileId });
   await event.save();
   return ApiSuccess.ok("Event Created Successfully", { event });
@@ -13,6 +15,14 @@ export async function getAllEvents(query) {
   const { page = 1, limit = 10, search, ...filters } = query;
 
   const filterQuery = { isDeleted: false };
+  const populateOptions = [
+    {
+      path: "user",
+      select: "-userId",
+    },
+  ];
+
+  const sort = { createdAt: 1 };
 
   if (search) {
     const searchQuery = {
@@ -33,12 +43,14 @@ export async function getAllEvents(query) {
     }
   }
 
-  const { documents: events, pagination } = await paginate(
-    Event,
-    filterQuery,
+  const { documents: events, pagination } = await paginate({
+    model: Event,
+    query: filterQuery,
     page,
-    limit
-  );
+    limit,
+    sort,
+    populateOptions,
+  });
 
   return ApiSuccess.ok("Events Retrieved Successfully", {
     events,
@@ -54,16 +66,16 @@ export async function getEvent(eventId) {
   });
 }
 
-export async function updateEvent(eventId, data) {
+export async function updateEvent(eventId, data, userId) {
   const event = await Event.findOneAndUpdate(
-    { _id: eventId, isDeleted: false },
+    { _id: eventId, userId, isDeleted: false },
     data,
     { new: true }
   );
 
   if (!event) throw ApiError.notFound("Event not found");
 
-  return ApiSuccess.ok("Event Retrieved Successfully", {
+  return ApiSuccess.ok("Event Updated Successfully", {
     event,
   });
 }

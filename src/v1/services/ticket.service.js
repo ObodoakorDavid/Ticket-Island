@@ -13,6 +13,8 @@ import { fileURLToPath } from "url";
 import { getCodeByName } from "./code.service.js";
 import Transaction from "../models/transaction.model.js";
 import fs from "fs";
+import { calculateCommission } from "../../utils/calculations.js";
+import walletService from "./wallet.service.js";
 
 export async function buyTicket(ticketData, userId, userProfileId) {
   const { data } = await eventService.getEvent(ticketData.eventId);
@@ -26,6 +28,7 @@ export async function buyTicket(ticketData, userId, userProfileId) {
     netPrice: event.ticketPrice * ticketData.unit,
     paymentStatus: "pending",
     unit: ticketData.unit,
+    commissionBornedBy: event.commissionBornedBy,
   });
 
   let priceToPay = event.ticketPrice * ticketData.unit;
@@ -41,6 +44,16 @@ export async function buyTicket(ticketData, userId, userProfileId) {
     transaction.netPrice = totalAmount - totalDiscount;
     priceToPay = totalAmount - totalDiscount;
   }
+
+  const commission = calculateCommission(priceToPay, event.pricingPlan);
+  transaction.commissionAmount = commission;
+
+  if (event.commissionBornedBy === "customer") {
+    const newPriceToPay = priceToPay + commission;
+    priceToPay = newPriceToPay;
+    transaction.netPrice = newPriceToPay;
+  }
+
   const user = await authService.findUserProfileByIdOrEmail(userId);
 
   const { authorizationUrl } = await payWithPayStack(
@@ -50,6 +63,7 @@ export async function buyTicket(ticketData, userId, userProfileId) {
   );
 
   await transaction.save();
+
   return ApiSuccess.ok("Transaction Initiated", {
     transaction,
     authorizationUrl,
@@ -80,7 +94,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     throw ApiError.badRequest("Transasction Reference Invalid");
   }
 
-  if (data?.amount !== transaction.netPrice) {
+  if (data?.amount / 100 !== transaction.netPrice) {
     throw ApiError.badRequest("Reference Mismatch");
   }
 
@@ -88,6 +102,11 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
   transaction.status = "success";
   transaction.reference = transactionRef;
   await transaction.save();
+
+  if (transaction.commissionBornedBy === "bearer") {
+    const oraganizerCut = transaction.netPrice - transaction.commissionAmount;
+    await walletService.creditWallet(transaction.eventId.user, oraganizerCut);
+  }
 
   const userEmail = transaction.user.email;
   const userFirstName = transaction.user.firstName;
@@ -168,16 +187,16 @@ export async function getAllTickets(query) {
 
   const filterQuery = { isDeleted: false };
 
-  //   if (search) {
-  //     const searchQuery = {
-  //       $or: [
-  //         { title: { $regex: search, $options: "i" } },
-  //         { event: { $regex: search, $options: "i" } },
-  //         { ticketType: { $regex: search, $options: "i" } },
-  //       ],
-  //     };
-  //     Object.assign(filterQuery, searchQuery);
-  //   }
+  if (search) {
+    const searchQuery = {
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { event: { $regex: search, $options: "i" } },
+        { ticketType: { $regex: search, $options: "i" } },
+      ],
+    };
+    Object.assign(filterQuery, searchQuery);
+  }
 
   for (const key in filters) {
     if (filters[key]) {
@@ -185,12 +204,12 @@ export async function getAllTickets(query) {
     }
   }
 
-  const { documents: tickets, pagination } = await paginate(
-    Ticket,
-    filterQuery,
+  const { documents: tickets, pagination } = await paginate({
+    model: Ticket,
+    query: filterQuery,
     page,
-    limit
-  );
+    limit,
+  });
 
   return ApiSuccess.ok("Tickets Retrieved Successfully", {
     tickets,
@@ -206,9 +225,9 @@ export async function getTicket(ticketId) {
   });
 }
 
-export async function updateTicket(ticketId, data) {
+export async function updateTicket(ticketId, data, userId) {
   const ticket = await Ticket.findOneAndUpdate(
-    { _id: ticketId, isDeleted: false },
+    { _id: ticketId, userId, isDeleted: false },
     data,
     { new: true }
   );
@@ -220,9 +239,9 @@ export async function updateTicket(ticketId, data) {
   });
 }
 
-export async function deleteTicket(ticketId) {
+export async function deleteTicket(ticketId, userId) {
   const ticket = await Ticket.findOneAndUpdate(
-    { _id: ticketId, isDeleted: false },
+    { _id: ticketId, userId, isDeleted: false },
     { isDeleted: true },
     { new: true }
   );
