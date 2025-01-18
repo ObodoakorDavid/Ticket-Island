@@ -15,32 +15,63 @@ import Transaction from "../models/transaction.model.js";
 import fs from "fs";
 import { calculateCommission } from "../../utils/calculations.js";
 import walletService from "./wallet.service.js";
+import { sendTicketsToEmail } from "../../utils/general.js";
 
 export async function buyTicket(ticketData, userId, userProfileId) {
-  const { data } = await eventService.getEvent(ticketData.eventId);
-  const event = data.event;
+  //
+  const { ticketId, eventId, unit, promoCode } = ticketData;
+
+  const eventTicket = await eventService.getEventTicketById(ticketId);
+  const event = await eventService.getEventById(eventId);
+
+  if (unit > eventTicket.maximumQuantity) {
+    throw ApiError.unprocessableEntity("Not enough tickets available");
+  }
+
+  if (unit < eventTicket.minimumQuantity) {
+    throw ApiError.unprocessableEntity(
+      `Minimun quantity to purchase is ${eventTicket.minimumQuantity}`
+    );
+  }
 
   const transaction = new Transaction({
-    eventId: event._id,
+    eventId: eventTicket.eventId,
     userId,
     user: userProfileId,
-    basePrice: event.ticketPrice * ticketData.unit,
-    netPrice: event.ticketPrice * ticketData.unit,
+    basePrice: eventTicket.price * unit,
+    netPrice: eventTicket.price * unit,
     paymentStatus: "pending",
-    unit: ticketData.unit,
+    unit,
     commissionBornedBy: event.commissionBornedBy,
   });
 
-  let priceToPay = event.ticketPrice * ticketData.unit;
+  if (eventTicket.type == "free") {
+    transaction.netPrice = 0;
+    transaction.basePrice = 0;
+    transaction.status = "success";
 
-  if (ticketData?.promoCode) {
-    const { data } = await getCodeByName(ticketData?.promoCode);
+    await transaction.save();
+
+    await sendTicketsToEmail(transaction);
+
+    return ApiSuccess.ok(
+      "Transaction Successful, Ticket has been to sent to your email",
+      {
+        transaction,
+      }
+    );
+  }
+
+  let priceToPay = eventTicket.price * unit;
+
+  if (promoCode) {
+    const { data } = await getCodeByName(promoCode);
     const code = data.code;
     transaction.isPromoApplied = true;
     transaction.promoCode = ticketData.promoCode;
 
-    const totalAmount = event.ticketPrice * ticketData.unit;
-    const totalDiscount = code.discount * ticketData.unit;
+    const totalAmount = eventTicket.price * unit;
+    const totalDiscount = code.discount * unit;
     transaction.netPrice = totalAmount - totalDiscount;
     priceToPay = totalAmount - totalDiscount;
   }
@@ -88,8 +119,6 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
 
   const { data } = await verifyPayStackPayment(transactionRef);
 
-  console.log(data?.status);
-
   if (data?.status !== "success") {
     throw ApiError.badRequest("Transasction Reference Invalid");
   }
@@ -108,77 +137,11 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     await walletService.creditWallet(transaction.eventId.user, oraganizerCut);
   }
 
-  const userEmail = transaction.user.email;
-  const userFirstName = transaction.user.firstName;
-  const eventName = transaction.eventId.title;
-  const numberOfTickets = transaction.unit;
-
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const pdfDir = path.join(__dirname, "../../storage/");
-
-  const ticketPaths = [];
-  const createdTickets = [];
-
-  for (let i = 0; i < numberOfTickets; i++) {
-    // Step 1: Create the ticket in the database
-    const newTicket = await Ticket.create({
-      eventId: transaction.eventId._id,
-      userId: transaction.user._id,
-      user: transaction.user._id,
-      basePrice: transaction.basePrice,
-      discountCodeUsed: transaction.isPromoApplied,
-      netPrice: transaction.netPrice / numberOfTickets,
-    });
-
-    if (transaction.isPromoApplied) {
-      newTicket.promoCode = transaction.promoCode;
-    }
-
-    createdTickets.push(newTicket);
-
-    // Step 2: Generate QR code using the ticket ID
-    const qrCodeData = await QRCode.toDataURL(
-      `${
-        process.env.SERVER_BASE_URL
-      }/api/v1/tickets/${newTicket._id.toString()}`
-    );
-
-    // Update the ticket with the generated QR code
-    newTicket.qrCode = qrCodeData;
-    await newTicket.save();
-
-    // Step 3: Generate PDF for each ticket
-    const pdfPath = path.join(pdfDir, `eTicket_${newTicket._id}.pdf`);
-    await generateTicketPDF({ userFirstName, eventName, qrCodeData, pdfPath });
-
-    ticketPaths.push(pdfPath);
-  }
-
-  // Attach tickets to the transaction
-  transaction.tickets = createdTickets.map((ticket) => ticket._id);
-  await transaction.save();
-
-  // Send all tickets via email
-  await sendQRCodeEmail(userEmail, userFirstName, ticketPaths, eventName);
-
-  // Step 4: Delete the PDFs from storage after sending the email
-  try {
-    for (const ticketPath of ticketPaths) {
-      fs.unlink(ticketPath, (err) => {
-        if (err) {
-          console.error(`Error deleting file ${ticketPath}:`, err);
-        } else {
-          console.log(`Successfully deleted ${ticketPath}`);
-        }
-      });
-    }
-  } catch (error) {
-    console.error("Error deleting files from storage:", error);
-  }
+  await sendTicketsToEmail(transaction);
 
   return ApiSuccess.ok(
     "Payment Successful, Ticket has been to sent to your email",
-    data
+    transaction
   );
 }
 

@@ -132,6 +132,13 @@ const eventSchema = new Schema(
       enum: ["bearer", "customer"],
       required: true,
     },
+    tickets: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "EventTicket",
+        required: true,
+      },
+    ],
   },
   {
     timestamps: true,

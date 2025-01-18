@@ -339,3 +339,124 @@ export const eventUpdateValidator = [
 
   handleValidationErrors,
 ];
+
+export const eventTicketValidator = [
+  body("name")
+    .exists()
+    .withMessage("Ticket Name is required")
+    .notEmpty()
+    .withMessage("Ticket Name can't be empty")
+    .isString()
+    .withMessage("Ticket Name must be a string"),
+
+  body("price")
+    .exists()
+    .withMessage("Price is required")
+    .isFloat({ min: 0 })
+    .withMessage("Price must be a positive number"),
+
+  body("quantity")
+    .exists()
+    .withMessage("Quantity is required")
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be an integer greater than or equal to 1"),
+
+  body("minimumQuantity")
+    .exists()
+    .withMessage("minimumQuantity is required")
+    .isInt({ min: 1 })
+    .withMessage(
+      "minimumQuantity must be an integer greater than or equal to 1"
+    ),
+
+  body("maximumQuantity")
+    .exists()
+    .withMessage("maximumQuantity is required")
+    .isInt({ min: 1 })
+    .withMessage(
+      "maximumQuantity must be an integer greater than or equal to 1"
+    ),
+
+  body("salesStart")
+    .exists()
+    .withMessage("Sales Start Date is required")
+    .isISO8601()
+    .withMessage("Sales Start Date must be a valid date in ISO 8601 format"),
+
+  body("salesEnd")
+    .exists()
+    .withMessage("Sales End Date is required")
+    .isISO8601()
+    .withMessage("Sales End Date must be a valid date in ISO 8601 format"),
+
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("Description must be a string if provided"),
+
+  handleValidationErrors,
+];
+
+export const eventTicketUpdateValidator = [
+  body("type")
+    .optional()
+    .isIn(["free", "paid"])
+    .withMessage("Ticket Type must be either 'free' or 'paid'")
+    .notEmpty()
+    .withMessage("Ticket Type can't be empty"),
+
+  body("name")
+    .exists()
+    .withMessage("Ticket Name is required")
+    .notEmpty()
+    .withMessage("Ticket Name can't be empty")
+    .isString()
+    .withMessage("Ticket Name must be a string"),
+
+  body("price")
+    .exists()
+    .withMessage("Price is required")
+    .isFloat({ min: 0 })
+    .withMessage("Price must be a positive number"),
+
+  body("quantity")
+    .exists()
+    .withMessage("Quantity is required")
+    .isInt({ min: 1 })
+    .withMessage("Quantity must be an integer greater than or equal to 1"),
+
+  body("minimumQuantity")
+    .exists()
+    .withMessage("minimumQuantity is required")
+    .isInt({ min: 1 })
+    .withMessage(
+      "minimumQuantity must be an integer greater than or equal to 1"
+    ),
+
+  body("maximumQuantity")
+    .exists()
+    .withMessage("maximumQuantity is required")
+    .isInt({ min: 1 })
+    .withMessage(
+      "maximumQuantity must be an integer greater than or equal to 1"
+    ),
+
+  body("salesStart")
+    .exists()
+    .withMessage("Sales Start Date is required")
+    .isISO8601()
+    .withMessage("Sales Start Date must be a valid date in ISO 8601 format"),
+
+  body("salesEnd")
+    .exists()
+    .withMessage("Sales End Date is required")
+    .isISO8601()
+    .withMessage("Sales End Date must be a valid date in ISO 8601 format"),
+
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("Description must be a string if provided"),
+
+  handleValidationErrors,
+];

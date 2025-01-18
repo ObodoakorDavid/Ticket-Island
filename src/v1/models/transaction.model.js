@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
+// Transaction History For Bought Tickets
 const transactionSchema = new Schema(
   {
     eventId: {
