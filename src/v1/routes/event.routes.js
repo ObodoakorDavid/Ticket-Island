@@ -23,7 +23,7 @@ router
 
 router
   .route("/:eventId")
-  .get(isAuth, getEvent)
+  .get(getEvent)
   .patch(isAuth, eventUpdateValidator, updateEvent)
   .delete(isAuth, deleteEvent)
   .all(methodNotAllowed);
