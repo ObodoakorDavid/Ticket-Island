@@ -113,6 +113,19 @@ export const eventValidator = [
     .isString()
     .withMessage("Direction description must be a string"),
 
+  body("QandA").isArray().withMessage("QandA must be an array"),
+  body("QandA.*.question")
+    .notEmpty()
+    .withMessage("QandA question is required")
+    .isString()
+    .withMessage("QandA answe must be a string"),
+
+  body("QandA.*.answer")
+    .notEmpty()
+    .withMessage("QandA answer is required")
+    .isString()
+    .withMessage("QandA answer must be a string"),
+
   body("pricingPlan")
     .exists()
     .withMessage("Pricing Plan is required")

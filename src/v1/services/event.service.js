@@ -7,8 +7,13 @@ import EventTicket from "../models/eventTicket..js";
 export async function createEvent(eventData, userId, userProfileId) {
   console.log(userProfileId);
 
+  console.log({ eventData });
+
   const event = new Event({ ...eventData, userId, user: userProfileId });
   await event.save();
+
+  console.log({ event });
+
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
 

@@ -71,6 +71,18 @@ const eventSchema = new Schema(
         },
       },
     ],
+    QandA: [
+      {
+        question: {
+          type: String,
+          required: true,
+        },
+        answer: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
     locationURL: {
       type: String,
       required: true,
@@ -83,13 +95,13 @@ const eventSchema = new Schema(
       enum: ["free", "paid"],
       required: true,
     },
-    ticketPrice: {
-      type: Number,
-      required: function () {
-        return this.ticketType === "paid";
-      },
-      min: [0, "Price cannot be negative"],
-    },
+    // ticketPrice: {
+    //   type: Number,
+    //   required: function () {
+    //     return this.ticketType === "paid";
+    //   },
+    //   min: [0, "Price cannot be negative"],
+    // },
     agendaTitle: {
       type: String,
     },

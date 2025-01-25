@@ -30,12 +30,12 @@ export async function getAllCodes(query, userId) {
     }
   }
 
-  const { documents: codes, pagination } = await paginate(
-    Code,
-    filterQuery,
+  const { documents: codes, pagination } = await paginate({
+    model: Code,
+    query: filterQuery,
     page,
-    limit
-  );
+    limit,
+  });
 
   return ApiSuccess.ok("Codes Retrieved Successfully", {
     codes,
