@@ -172,11 +172,7 @@ export const verifyEmailToken = async (token) => {
   if (!token) {
     throw ApiError.badRequest("Token is required");
   }
-
   const { userId } = verifyToken(token);
-
-  console.log(userId);
-
   const userProfile = await UserProfile.findOne({ userId });
   if (!userProfile) {
     throw ApiError.notFound("User not found");

@@ -13,9 +13,6 @@ export const sendTicketsToEmail = async (transaction) => {
   const numberOfTickets = transaction.unit;
 
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-  console.log(__dirname);
-
   const pdfDir = path.join(__dirname, "../storage/");
 
   const ticketPaths = [];

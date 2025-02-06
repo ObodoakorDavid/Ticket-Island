@@ -45,7 +45,20 @@ const codeSchema = new Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
+    startTime: {
+      type: Date,
+      required: true,
+    },
+    endTime: {
+      type: Date,
+      required: true,
+    },
     isDeleted: { type: Boolean, default: false },
+    eventId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
   },
   { timestamps: true }
 );

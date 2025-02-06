@@ -5,15 +5,8 @@ import Event from "../models/event.model.js";
 import EventTicket from "../models/eventTicket..js";
 
 export async function createEvent(eventData, userId, userProfileId) {
-  console.log(userProfileId);
-
-  console.log({ eventData });
-
   const event = new Event({ ...eventData, userId, user: userProfileId });
   await event.save();
-
-  console.log({ event });
-
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
 
@@ -121,8 +114,6 @@ export async function createEventTicket(eventId, eventTicketData) {
   const event = await Event.findById(eventId);
   if (!event || event.isDeleted) throw ApiError.notFound("Event not found");
 
-  console.log({ eventTicketData });
-
   const eventTicket = await EventTicket.create({
     eventId: event._id,
     ...eventTicketData,
@@ -130,8 +121,6 @@ export async function createEventTicket(eventId, eventTicketData) {
 
   event.tickets.push(eventTicket._id); // Assuming tickets is an array in Event schema
   await event.save();
-
-  console.log({ tickets: event.tickets });
 
   return ApiSuccess.ok("Event Ticket Created Successfully", {
     ticket: eventTicket,

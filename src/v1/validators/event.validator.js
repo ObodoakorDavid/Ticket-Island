@@ -353,6 +353,7 @@ export const eventUpdateValidator = [
   handleValidationErrors,
 ];
 
+///////////////
 export const eventTicketValidator = [
   body("name")
     .exists()

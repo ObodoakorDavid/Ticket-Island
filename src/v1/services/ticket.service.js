@@ -5,27 +5,25 @@ import { payWithPayStack, verifyPayStackPayment } from "../../utils/payment.js";
 import Ticket from "../models/ticket.model.js";
 import authService from "../../v1/services/auth.service.js";
 import eventService from "../../v1/services/event.service.js";
-import QRCode from "qrcode";
-import { sendQRCodeEmail } from "../../utils/emailUtils.js";
-import { generateTicketPDF } from "../../utils/generateOTP.js";
-import path from "path";
-import { fileURLToPath } from "url";
-import { getCodeByName } from "./code.service.js";
-import Transaction from "../models/transaction.model.js";
-import fs from "fs";
+import {
+  getAndIncrementPromoCodeUsage,
+  getCodeByName,
+} from "./code.service.js";
 import { calculateCommission } from "../../utils/calculations.js";
 import walletService from "./wallet.service.js";
 import { sendTicketsToEmail } from "../../utils/general.js";
+import Order from "../models/order.model.js";
 
 export async function buyTicket(ticketData, userId, userProfileId) {
-  //
   const { ticketId, eventId, unit, promoCode } = ticketData;
 
   const eventTicket = await eventService.getEventTicketById(ticketId);
   const event = await eventService.getEventById(eventId);
 
   if (unit > eventTicket.maximumQuantity) {
-    throw ApiError.unprocessableEntity("Not enough tickets available");
+    throw ApiError.unprocessableEntity(
+      `You can't purchase more than ${maximumQuantity} tickets`
+    );
   }
 
   if (unit < eventTicket.minimumQuantity) {
@@ -34,7 +32,7 @@ export async function buyTicket(ticketData, userId, userProfileId) {
     );
   }
 
-  const transaction = new Transaction({
+  const order = new Order({
     eventId: eventTicket.eventId,
     userId,
     user: userProfileId,
@@ -46,18 +44,18 @@ export async function buyTicket(ticketData, userId, userProfileId) {
   });
 
   if (eventTicket.type == "free") {
-    transaction.netPrice = 0;
-    transaction.basePrice = 0;
-    transaction.status = "success";
+    order.netPrice = 0;
+    order.basePrice = 0;
+    order.status = "success";
 
-    await transaction.save();
+    await order.save();
 
-    await sendTicketsToEmail(transaction);
+    await sendTicketsToEmail(order);
 
     return ApiSuccess.ok(
       "Transaction Successful, Ticket has been to sent to your email",
       {
-        transaction,
+        order,
       }
     );
   }
@@ -65,24 +63,46 @@ export async function buyTicket(ticketData, userId, userProfileId) {
   let priceToPay = eventTicket.price * unit;
 
   if (promoCode) {
-    const { data } = await getCodeByName(promoCode);
-    const code = data.code;
-    transaction.isPromoApplied = true;
-    transaction.promoCode = ticketData.promoCode;
+    const code = await getCodeByName(promoCode);
+
+    order.isPromoApplied = true;
+    order.promoCode = ticketData.promoCode;
 
     const totalAmount = eventTicket.price * unit;
     const totalDiscount = code.discount * unit;
-    transaction.netPrice = totalAmount - totalDiscount;
-    priceToPay = totalAmount - totalDiscount;
+    const amountAfterDiscount = totalAmount - totalDiscount;
+    order.netPrice = amountAfterDiscount;
+    priceToPay = amountAfterDiscount;
+  }
+
+  if (priceToPay <= 0 || eventTicket.type == "free") {
+    order.netPrice = 0;
+    order.basePrice = 0;
+    order.status = "success";
+
+    await order.save();
+
+    if (order.promoCode) {
+      await getAndIncrementPromoCodeUsage(order.promoCode);
+    }
+
+    await sendTicketsToEmail(order);
+
+    return ApiSuccess.ok(
+      "Transaction Successful, Ticket has been to sent to your email",
+      {
+        order,
+      }
+    );
   }
 
   const commission = calculateCommission(priceToPay, event.pricingPlan);
-  transaction.commissionAmount = commission;
+  order.commissionAmount = commission;
 
   if (event.commissionBornedBy === "customer") {
     const newPriceToPay = priceToPay + commission;
     priceToPay = newPriceToPay;
-    transaction.netPrice = newPriceToPay;
+    order.netPrice = newPriceToPay;
   }
 
   const user = await authService.findUserProfileByIdOrEmail(userId);
@@ -90,32 +110,29 @@ export async function buyTicket(ticketData, userId, userProfileId) {
   const { authorizationUrl } = await payWithPayStack(
     user.email,
     priceToPay,
-    transaction._id
+    order._id
   );
 
-  await transaction.save();
+  await order.save();
 
-  return ApiSuccess.ok("Transaction Initiated", {
-    transaction,
+  return ApiSuccess.ok("Order Initiated", {
+    order,
     authorizationUrl,
   });
 }
 
 export async function handlePaymentSuccess(transactionId, transactionRef) {
-  console.log({ transactionId, transactionRef });
-
-  const existingTransaction = await Transaction.findOne({
+  const existingTransaction = await Order.findOne({
     reference: transactionRef,
   });
+
   if (existingTransaction) {
     throw ApiError.badRequest("Transaction reference has already been used.");
   }
 
-  const transaction = await Transaction.findById(transactionId).populate(
-    "eventId user"
-  );
+  const order = await Order.findById(transactionId).populate("eventId user");
 
-  if (!transaction) throw ApiError.notFound("Transaction not found");
+  if (!order) throw ApiError.notFound("Transaction not found");
 
   const { data } = await verifyPayStackPayment(transactionRef);
 
@@ -123,26 +140,24 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     throw ApiError.badRequest("Transasction Reference Invalid");
   }
 
-  if (data?.amount / 100 !== transaction.netPrice) {
+  if (data?.amount / 100 !== order.netPrice) {
     throw ApiError.badRequest("Reference Mismatch");
   }
 
   // Update the transaction with the payment status
-  transaction.status = "success";
-  transaction.reference = transactionRef;
-  await transaction.save();
+  order.status = "success";
+  order.reference = transactionRef;
+  await order.save();
+  await getAndIncrementPromoCodeUsage(order.promoCode);
 
-  if (transaction.commissionBornedBy === "bearer") {
-    const oraganizerCut = transaction.netPrice - transaction.commissionAmount;
-    await walletService.creditWallet(transaction.eventId.user, oraganizerCut);
+  if (order.commissionBornedBy === "bearer") {
+    const oraganizerCut = order.netPrice - order.commissionAmount;
+    await walletService.creditWallet(order.eventId.user, oraganizerCut);
   }
 
-  await sendTicketsToEmail(transaction);
+  await sendTicketsToEmail(order);
 
-  return ApiSuccess.ok(
-    "Payment Successful, Ticket has been to sent to your email",
-    transaction
-  );
+  return order;
 }
 
 export async function getAllTickets(query) {

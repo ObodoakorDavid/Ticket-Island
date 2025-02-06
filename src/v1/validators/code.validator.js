@@ -28,5 +28,72 @@ export const codeValidator = [
     .isInt({ min: 1 })
     .withMessage("limit must be an integer greater than or equal to 1"),
 
+  body("startTime")
+    .exists()
+    .withMessage("Start time is required")
+    .notEmpty()
+    .withMessage("Start time can't be empty")
+    .isString()
+    .withMessage("Start time must be a string"),
+
+  body("endTime")
+    .exists()
+    .withMessage("End time is required")
+    .notEmpty()
+    .withMessage("End time can't be empty")
+    .isString()
+    .withMessage("End time must be a string"),
+
+  body("eventId")
+    .exists()
+    .withMessage("Event ID is required")
+    .isMongoId()
+    .withMessage("Event ID must be a valid MongoDB ObjectId"),
+
+  handleValidationErrors,
+];
+
+export const codeUpdateValidator = [
+  body("codeName")
+    .optional()
+    .isString()
+    .withMessage("codeName must be a string")
+    .trim()
+    .withMessage("codeName must not have leading or trailing spaces"),
+
+  body("codeType")
+    .optional()
+    .isIn(["promo", "access"])
+    .withMessage("codeType must be either 'promo' or 'access'"),
+
+  body("discount")
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage("discount must be a number greater than or equal to 0"),
+
+  body("limit")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("limit must be an integer greater than or equal to 1"),
+
+  body("startTime")
+    .optional()
+    .isString()
+    .withMessage("Start time must be a string")
+    .notEmpty()
+    .withMessage("Start time can't be empty"),
+
+  body("endTime")
+    .optional()
+    .isString()
+    .withMessage("End time must be a string")
+    .notEmpty()
+    .withMessage("End time can't be empty"),
+
+  body("eventId")
+    .optional()
+    .isMongoId()
+    .withMessage("Event ID must be a valid MongoDB ObjectId"),
+
   handleValidationErrors,
 ];

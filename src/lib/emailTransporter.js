@@ -16,7 +16,7 @@ const createTransporter = () =>
       rejectUnauthorized: false,
     },
     logger: true,
-    debug: true,
+    // debug: true,
   });
 
 export default createTransporter;

@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-// Transaction History For Bought Tickets
-const transactionSchema = new Schema(
+// Order Schema for Bought Tickets
+const OrderSchema = new Schema(
   {
     eventId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -39,6 +39,7 @@ const transactionSchema = new Schema(
     promoCode: {
       type: String,
       required: false,
+      default: "",
     },
     isPromoApplied: {
       type: Boolean,
@@ -64,6 +65,7 @@ const transactionSchema = new Schema(
     reference: {
       type: String,
       required: false,
+      default: "",
     },
     tickets: [
       {
@@ -78,8 +80,8 @@ const transactionSchema = new Schema(
 );
 
 // Add indexes to optimize queries
-transactionSchema.index({ eventId: 1, userId: 1 });
+OrderSchema.index({ eventId: 1, userId: 1 });
 
-const Transaction = mongoose.model("Transaction", transactionSchema);
+const Order = mongoose.model("Order", OrderSchema);
 
-export default Transaction;
+export default Order;

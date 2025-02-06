@@ -13,6 +13,7 @@ import authRoutesV1 from "./src/v1/routes/auth.routes.js";
 import eventRoutesV1 from "./src/v1/routes/event.routes.js";
 import ticketRoutesV1 from "./src/v1/routes/ticket.routes.js";
 import codeRoutesV1 from "./src/v1/routes/code.routes.js";
+import orderRoutesV1 from "./src/v1/routes/order.routes.js";
 import waitlistRoutesV1 from "./src/v1/routes/waitlist.routes.js";
 import { isAuth } from "./src/middlewares/auth.js";
 
@@ -34,6 +35,7 @@ app.use("/api/v1/auth", authRoutesV1);
 app.use("/api/v1/events", eventRoutesV1);
 app.use("/api/v1/tickets", ticketRoutesV1);
 app.use("/api/v1/codes", isAuth, codeRoutesV1);
+app.use("/api/v1/orders", isAuth, orderRoutesV1);
 app.use("/api/v1/waitlist", waitlistRoutesV1);
 // app.use("/api/v1/admin", adminRoutes);
 app.use(notFound);
