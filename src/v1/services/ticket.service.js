@@ -17,8 +17,10 @@ import Order from "../models/order.model.js";
 export async function buyTicket(ticketData, userId, userProfileId) {
   const { ticketId, eventId, unit, promoCode } = ticketData;
 
-  const eventTicket = await eventService.getEventTicketById(ticketId);
+  console.log({ eventId, ticketId });
+
   const event = await eventService.getEventById(eventId);
+  const eventTicket = await eventService.getEventTicketById(ticketId);
 
   if (unit > eventTicket.maximumQuantity) {
     throw ApiError.unprocessableEntity(
@@ -63,7 +65,7 @@ export async function buyTicket(ticketData, userId, userProfileId) {
   let priceToPay = eventTicket.price * unit;
 
   if (promoCode) {
-    const code = await getCodeByName(promoCode);
+    const code = await getCodeByName(promoCode, eventTicket._id);
 
     order.isPromoApplied = true;
     order.promoCode = ticketData.promoCode;

@@ -2,6 +2,7 @@ import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Code from "../models/code.model.js";
+import EventTicket from "../models/eventTicket..js";
 
 export async function getCodeById(codeId) {
   const code = await Code.findOne({ _id: codeId, isDeleted: false });
@@ -9,7 +10,7 @@ export async function getCodeById(codeId) {
   return code;
 }
 
-export async function getCodeByName(codeName) {
+export async function getCodeByName(codeName, eventTicketId) {
   const code = await Code.findOne({ codeName, isDeleted: false });
 
   if (!code) {
@@ -17,12 +18,10 @@ export async function getCodeByName(codeName) {
   }
 
   const now = new Date();
-
   // Check if the promo code start time is in the future
   if (code.startTime && code.startTime >= now) {
     throw ApiError.unprocessableEntity("This promo code is not active yet");
   }
-
   // Check if the promo code end time has passed
   if (code.endTime && code.endTime < now) {
     throw ApiError.unprocessableEntity("This promo code has expired");
@@ -40,6 +39,13 @@ export async function getCodeByName(codeName) {
 
   if (code.codeStatus === "inactive") {
     throw ApiError.unprocessableEntity("This promo code is no longer active");
+  }
+
+  // Check if the eventTicket is in the events array
+  if (!code.eventTickets.includes(eventTicketId)) {
+    throw ApiError.unprocessableEntity(
+      "This promo code is not valid for the selected event ticket"
+    );
   }
 
   return code;
@@ -67,6 +73,24 @@ export async function getCode(codeId) {
 }
 
 export async function createCode(codeData, userId, userProfileId) {
+  const { eventTickets } = codeData;
+
+  // Check that every event ticket exists
+  const missingTickets = [];
+
+  for (const ticketId of eventTickets) {
+    const ticketExists = await EventTicket.findById(ticketId);
+    if (!ticketExists) {
+      missingTickets.push(ticketId);
+    }
+  }
+
+  if (missingTickets.length > 0) {
+    throw ApiError.notFound(
+      `The following event tickets do not exist: ${missingTickets.join(", ")}`
+    );
+  }
+
   const code = new Code({ ...codeData, userId, user: userProfileId });
   await code.save();
   return ApiSuccess.ok("Code Created Successfully", { code });

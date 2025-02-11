@@ -5,7 +5,8 @@ import Event from "../models/event.model.js";
 import EventTicket from "../models/eventTicket..js";
 
 export async function createEvent(eventData, userId, userProfileId) {
-  const event = new Event({ ...eventData, userId, user: userProfileId });
+  const { isApproved, ...otherEventData } = eventData;
+  const event = new Event({ ...otherEventData, userId, user: userProfileId });
   await event.save();
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
@@ -38,12 +39,6 @@ export async function getAllEvents(query) {
     };
     Object.assign(filterQuery, searchQuery);
   }
-
-  // for (const key in filters) {
-  //   if (filters[key]) {
-  //     filterQuery[key] = filters[key];
-  //   }
-  // }
 
   const { documents: events, pagination } = await paginate({
     model: Event,
@@ -82,10 +77,10 @@ export async function getEvent(eventId) {
   });
 }
 
-export async function updateEvent(eventId, data, userId) {
+export async function updateEvent(eventId, eventData = {}, userId) {
   const event = await Event.findOneAndUpdate(
     { _id: eventId, userId, isDeleted: false },
-    data,
+    eventData,
     { new: true }
   );
 
@@ -129,11 +124,6 @@ export async function createEventTicket(eventId, eventTicketData) {
 
 // Retrieve all tickets for an event
 export async function getEventTickets(eventId) {
-  // const event = await Event.findOne({
-  //   _id: eventId,
-  //   isDeleted: false,
-  // }).populate("tickets");
-
   const event = await Event.findOne({
     _id: eventId,
     isDeleted: false,
@@ -218,7 +208,6 @@ const eventService = {
   getEventTicket,
   updateEventTicket,
   deleteEventTicket,
-  //
   getEventTicketById,
   getEventById,
 };

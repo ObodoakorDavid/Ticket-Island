@@ -123,6 +123,8 @@ const eventSchema = new Schema(
       default: Date.now,
     },
     isDeleted: { type: Boolean, default: false },
+    isPublished: { type: Boolean, default: false },
+    isApproved: { type: Boolean, default: false },
     availableCodes: [
       {
         type: mongoose.Schema.Types.ObjectId,

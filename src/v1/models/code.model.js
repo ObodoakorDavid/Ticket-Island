@@ -54,11 +54,12 @@ const codeSchema = new Schema(
       required: true,
     },
     isDeleted: { type: Boolean, default: false },
-    eventId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Event",
-      default: null,
-    },
+    eventTickets: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "EventTicket",
+      },
+    ],
   },
   { timestamps: true }
 );

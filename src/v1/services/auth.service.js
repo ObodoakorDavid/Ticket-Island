@@ -103,6 +103,7 @@ export async function login(userData = {}) {
   const token = generateToken({
     userId: user._id,
     userProfileId: userProfile._id,
+    roles: user.roles,
   });
   return ApiSuccess.ok("Login Successful", {
     user: { email: user.email, id: user._id },

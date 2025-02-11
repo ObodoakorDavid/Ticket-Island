@@ -44,11 +44,15 @@ export const codeValidator = [
     .isString()
     .withMessage("End time must be a string"),
 
-  body("eventId")
-    .exists()
-    .withMessage("Event ID is required")
-    .isMongoId()
-    .withMessage("Event ID must be a valid MongoDB ObjectId"),
+  body("eventTickets")
+    .exists({ checkFalsy: true })
+    .withMessage("Event tickets are required")
+    .isArray({ min: 1 })
+    .withMessage("Event tickets must be an array")
+    .custom((arr) => arr.every((id) => /^[a-f\d]{24}$/i.test(id)))
+    .withMessage(
+      "Each event ticket id in the array must be a valid MongoDB ObjectId"
+    ),
 
   handleValidationErrors,
 ];
@@ -94,6 +98,15 @@ export const codeUpdateValidator = [
     .optional()
     .isMongoId()
     .withMessage("Event ID must be a valid MongoDB ObjectId"),
+
+  body("eventTickets")
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage("Event ticket must be an array")
+    .custom((arr) => arr.every((id) => /^[a-f\d]{24}$/i.test(id)))
+    .withMessage(
+      "Each event ticket id in the array must be a valid MongoDB ObjectId"
+    ),
 
   handleValidationErrors,
 ];

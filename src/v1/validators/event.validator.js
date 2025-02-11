@@ -350,6 +350,13 @@ export const eventUpdateValidator = [
     .notEmpty()
     .withMessage("Ticket Price can't be empty"),
 
+  body("isPublished")
+    .optional()
+    .isBoolean()
+    .withMessage("Published must be a boolean")
+    .notEmpty()
+    .withMessage("Published can't be empty"),
+
   handleValidationErrors,
 ];
 
@@ -362,6 +369,12 @@ export const eventTicketValidator = [
     .withMessage("Ticket Name can't be empty")
     .isString()
     .withMessage("Ticket Name must be a string"),
+
+  body("type")
+    .exists()
+    .withMessage("Type is required")
+    .isIn(["free", "paid"])
+    .withMessage("Type must be either 'free' or 'paid'"),
 
   body("price")
     .exists()
