@@ -2,7 +2,7 @@ import asyncWrapper from "../../middlewares/asyncWrapper.js";
 import eventService from "../services/event.service.js";
 
 export const createEvent = asyncWrapper(async (req, res) => {
-  const eventData = req.body;
+  const { isApproved, ...eventData } = req.body;
   const { userId } = req.user;
   const result = await eventService.createEvent(
     eventData,
@@ -18,6 +18,13 @@ export const getAllEvents = asyncWrapper(async (req, res) => {
   res.status(200).json(result);
 });
 
+// export const getAllUserEvents = asyncWrapper(async (req, res) => {
+//   const query = req.query;
+//   const { userId } = req.user;
+//   const result = await eventService.getAllUserEvents(query, userId);
+//   res.status(200).json(result);
+// });
+
 export const getEvent = asyncWrapper(async (req, res) => {
   const { eventId } = req.params;
   const result = await eventService.getEvent(eventId);
@@ -26,7 +33,7 @@ export const getEvent = asyncWrapper(async (req, res) => {
 
 export const updateEvent = asyncWrapper(async (req, res) => {
   const { eventId } = req.params;
-  const eventData = req.body;
+  const { isApproved, ...eventData } = req.body;
   const { userId } = req.user;
   const result = await eventService.updateEvent(eventId, eventData, userId);
   res.status(200).json(result);
@@ -70,7 +77,7 @@ export const updateEventTicket = asyncWrapper(async (req, res) => {
 });
 
 export const deleteEventTicket = asyncWrapper(async (req, res) => {
-  const { eventId, ticketId } = req.params;  
+  const { eventId, ticketId } = req.params;
   const result = await eventService.deleteEventTicket(eventId, ticketId);
   res.status(200).json(result);
 });

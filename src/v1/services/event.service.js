@@ -12,13 +12,17 @@ export async function createEvent(eventData, userId) {
 }
 
 export async function getAllEvents(query) {
-  const { page = 1, limit = 10, search } = query;
+  const { page = 1, limit = 10, search, userId } = query;
 
   const filterQuery = { isDeleted: false };
+
+  if (userId) {
+    filterQuery.user = userId;
+  }
+
   const populateOptions = [
     {
       path: "user",
-      select: "-userId",
     },
     // {
     //   path: "tickets",
@@ -54,6 +58,50 @@ export async function getAllEvents(query) {
     pagination,
   });
 }
+
+// export async function getAllUserEvents(query, userId) {
+//   const { page = 1, limit = 10, search, } = query;
+
+//   const filterQuery = { isDeleted: false, user: userId };
+//   const populateOptions = [
+//     {
+//       path: "user",
+//       select: "-userId",
+//     },
+//     // {
+//     //   path: "tickets",
+//     // },
+//   ];
+
+//   const sort = { createdAt: 1 };
+
+//   if (search) {
+//     const searchQuery = {
+//       $or: [
+//         { title: { $regex: search, $options: "i" } },
+//         { eventType: { $regex: search, $options: "i" } },
+//         { state: { $regex: search, $options: "i" } },
+//         { country: { $regex: search, $options: "i" } },
+//         { address: { $regex: search, $options: "i" } },
+//       ],
+//     };
+//     Object.assign(filterQuery, searchQuery);
+//   }
+
+//   const { documents: events, pagination } = await paginate({
+//     model: Event,
+//     query: filterQuery,
+//     page,
+//     limit,
+//     sort,
+//     populateOptions,
+//   });
+
+//   return ApiSuccess.ok("Events Retrieved Successfully", {
+//     events,
+//     pagination,
+//   });
+// }
 
 export async function getEventById(eventId) {
   const event = await Event.findOne({
@@ -200,6 +248,7 @@ export async function deleteEventTicket(eventId, ticketId) {
 const eventService = {
   createEvent,
   getAllEvents,
+  // getAllUserEvents,
   getEvent,
   updateEvent,
   deleteEvent,

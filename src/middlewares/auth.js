@@ -13,4 +13,12 @@ const isAuth = asyncWrapper(async (req, res, next) => {
   next();
 });
 
-export { isAuth };
+const isAdmin = asyncWrapper(async (req, res, next) => {
+  const user = req.user;
+  if (!user.roles.includes("admin")) {
+    throw ApiError.unauthorized("Unauthorized, Admins Only");
+  }
+  next();
+});
+
+export { isAuth, isAdmin };

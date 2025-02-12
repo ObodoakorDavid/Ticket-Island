@@ -49,6 +49,7 @@ export async function register(userData = {}) {
     {
       email: user.email,
       userId: user._id,
+      roles: user.roles,
     },
     "1h"
   );
