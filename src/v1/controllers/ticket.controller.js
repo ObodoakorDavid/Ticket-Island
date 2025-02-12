@@ -3,12 +3,8 @@ import ticketService from "../services/ticket.service.js";
 
 export const buyTicket = asyncWrapper(async (req, res) => {
   const ticketData = req.body;
-  const { userId, userProfileId } = req.user; // Assuming user info is available in req.user
-  const result = await ticketService.buyTicket(
-    ticketData,
-    userId,
-    userProfileId
-  );
+  const { userId } = req.user; // Assuming user info is available in req.user
+  const result = await ticketService.buyTicket(ticketData, userId);
   res.status(201).json(result);
 });
 

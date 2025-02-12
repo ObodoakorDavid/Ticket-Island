@@ -3,6 +3,7 @@ import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Code from "../models/code.model.js";
 import EventTicket from "../models/eventTicket..js";
+import eventService from "./event.service.js";
 
 export async function getCodeById(codeId) {
   const code = await Code.findOne({ _id: codeId, isDeleted: false });
@@ -72,8 +73,10 @@ export async function getCode(codeId) {
   });
 }
 
-export async function createCode(codeData, userId, userProfileId) {
-  const { eventTickets } = codeData;
+export async function createCode(codeData, userId) {
+  const { eventTickets, eventId } = codeData;
+
+  const event = await eventService.getEventById(eventId);
 
   // Check that every event ticket exists
   const missingTickets = [];
@@ -91,15 +94,15 @@ export async function createCode(codeData, userId, userProfileId) {
     );
   }
 
-  const code = new Code({ ...codeData, userId, user: userProfileId });
+  const code = new Code({ ...codeData, user: userId });
   await code.save();
   return ApiSuccess.ok("Code Created Successfully", { code });
 }
 
 export async function getAllCodes(query, userId) {
-  const { page = 1, limit = 10, search, ...filters } = query;
+  const { page = 1, limit = 10, search } = query;
 
-  const filterQuery = { isDeleted: false, userId };
+  const filterQuery = { isDeleted: false, user: userId };
 
   if (search) {
     const searchQuery = {
@@ -109,12 +112,6 @@ export async function getAllCodes(query, userId) {
       ],
     };
     Object.assign(filterQuery, searchQuery);
-  }
-
-  for (const key in filters) {
-    if (filters[key]) {
-      filterQuery[key] = filters[key];
-    }
   }
 
   const { documents: codes, pagination } = await paginate({

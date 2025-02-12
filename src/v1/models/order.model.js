@@ -5,21 +5,21 @@ const { Schema } = mongoose;
 // Order Schema for Bought Tickets
 const OrderSchema = new Schema(
   {
-    eventId: {
+    event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
       required: true,
     },
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserProfile",
-      required: true,
-    },
+    // user: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "UserProfile",
+    //   required: true,
+    // },
     unit: {
       type: Number,
       required: true,

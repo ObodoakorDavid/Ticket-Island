@@ -51,7 +51,7 @@ export async function getAllOrders(userId, query) {
     // },
   ];
 
-  const sort = { createdAt: 1 };
+  const sort = { createdAt: -1 };
 
   if (search) {
     const searchQuery = {

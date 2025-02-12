@@ -4,21 +4,21 @@ const { Schema } = mongoose;
 
 const ticketSchema = new Schema(
   {
-    eventId: {
+    event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
       required: true, // The event this ticket belongs to
     },
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true, // The user who purchased the ticket
     },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserProfile",
-      required: true, // The user's profile details
-    },
+    // user: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "UserProfile",
+    //   required: true, // The user's profile details
+    // },
     basePrice: {
       type: Number,
       required: true,

@@ -1,31 +1,27 @@
 import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
-import UserProfile from "../models/userProfile.model.js";
 import TransactionHistory from "../models/transactionHistory.model.js";
 import axios from "axios";
+import authService from "./auth.service.js";
 
 // Paystack API setup
 const PAYSTACK_SECRET_KEY = "your-paystack-secret-key";
 const PAYSTACK_BASE_URL = "https://api.paystack.co";
 
 // Function to credit the user's wallet
-async function creditWallet(userProfileId, amount) {
+async function creditWallet(userId, amount) {
   if (amount <= 0) {
     throw ApiError.badRequest("Amount must be greater than zero");
   }
 
-  const userProfile = await UserProfile.findById(userProfileId);
-  if (!userProfile) {
-    throw ApiError.notFound("User Profile not found");
-  }
-
-  userProfile.balance += amount;
-  const newBalance = userProfile.balance;
-  await userProfile.save();
+  const user = await authService.findUserByIdOrEmail(userId);
+  user.balance += amount;
+  const newBalance = user.balance;
+  await user.save();
 
   // Log the credit transaction
   const transaction = new TransactionHistory({
-    userProfileId,
+    user: userId,
     transactionType: "credit",
     amount,
     balanceAfterTransaction: newBalance,
@@ -36,20 +32,17 @@ async function creditWallet(userProfileId, amount) {
 }
 
 // Function to withdraw funds from the user's wallet (interacts with Paystack)
-async function withdrawWallet(userProfileId, amount, paystackEmail) {
+async function withdrawWallet(userId, amount, paystackEmail) {
   if (amount <= 0) {
     throw ApiError.badRequest("Amount must be greater than zero");
   }
 
-  const userProfile = await UserProfile.findById(userProfileId);
-  if (!userProfile) {
-    throw ApiError.notFound("User Profile not found");
-  }
-
-  if (userProfile.balance < amount) {
+  const user = await authService.findUserByIdOrEmail(userId);
+  if (user.balance < amount) {
     throw ApiError.badRequest("Insufficient balance");
   }
 
+  //TODO
   // Initiate withdrawal via Paystack (assuming it's an account payout)
   const withdrawalResponse = await initiatePaystackWithdrawal(
     amount,
@@ -61,9 +54,9 @@ async function withdrawWallet(userProfileId, amount, paystackEmail) {
   }
 
   // Update the user's balance
-  userProfile.balance -= amount;
-  const newBalance = userProfile.balance;
-  await userProfile.save();
+  user.balance -= amount;
+  const newBalance = user.balance;
+  await user.save();
 
   // Log the withdrawal transaction
   const transaction = new TransactionHistory({
@@ -106,10 +99,10 @@ async function initiatePaystackWithdrawal(amount, email) {
 }
 
 // Function to get transaction history for a user
-async function getTransactionHistory(userProfileId, query) {
+async function getTransactionHistory(userId, query) {
   const { page = 1, limit = 10 } = query;
 
-  const filterQuery = { userProfileId };
+  const filterQuery = { user: userId };
 
   const transactions = await TransactionHistory.find(filterQuery)
     .skip((page - 1) * limit)

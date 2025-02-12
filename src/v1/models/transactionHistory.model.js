@@ -5,9 +5,9 @@ const { Schema } = mongoose;
 // Transaction hHistory for Wallet
 const TransactionHistorySchema = new Schema(
   {
-    userProfileId: {
+    user: {
       type: Schema.Types.ObjectId,
-      ref: "UserProfile",
+      ref: "User",
       required: true,
     },
     transactionType: {

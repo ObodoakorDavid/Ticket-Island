@@ -4,16 +4,16 @@ const { Schema } = mongoose;
 
 const codeSchema = new Schema(
   {
-    userId: {
+    user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserProfile",
-      required: true,
-    },
+    // user: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "UserProfile",
+    //   required: true,
+    // },
     codeName: {
       type: String,
       required: true,

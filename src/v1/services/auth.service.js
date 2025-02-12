@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { generateToken, verifyToken } from "../../config/token.js";
 import User from "../models/user.model.js";
-import UserProfile from "../models/userProfile.model.js";
+// import UserProfile from "../models/userProfile.model.js";
 import OTP from "../models/otp.model.js";
 import ApiError from "../../utils/apiError.js";
 import { hashPassword, validatePassword } from "../../utils/validationUtils.js";
@@ -10,83 +10,68 @@ import ApiSuccess from "../../utils/apiSuccess.js";
 import MailingList from "../models/mailingList.model.js";
 
 export async function findUserByEmail(email) {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
   if (!user) {
     throw ApiError.notFound("No user with this email");
   }
   return user;
 }
 
-export async function findUserProfileByIdOrEmail(identifier) {
+export async function findUserByIdOrEmail(identifier) {
   const isObjectId = mongoose.Types.ObjectId.isValid(identifier);
-  const userProfile = await UserProfile.findOne(
-    isObjectId ? { userId: identifier } : { email: identifier }
-  );
+  const user = await User.findOne(
+    isObjectId ? { _id: identifier } : { email: identifier }
+  ).select("+password");
 
-  if (!userProfile) {
+  if (!user) {
     throw ApiError.notFound("User Not Found");
   }
 
-  return userProfile;
+  return user;
 }
 
 export async function register(userData = {}) {
   const { password, joinMailingList } = userData;
   const hashedPassword = await hashPassword(password);
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const user = await User.create({ ...userData, password: hashedPassword });
+
+  // Add user to mailing list if requested
+  await addUserToMailingList({
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    userId: user._id,
+    joinMailingList,
+  });
+
+  const token = generateToken(
+    {
+      email: user.email,
+      userId: user._id,
+    },
+    "1h"
+  );
+
+  const magicLink = `${process.env.CLIENT_BASE_URL}/api/v1/auth/verify-email?token=${token}`;
 
   try {
-    const user = await User.create(
-      [{ ...userData, password: hashedPassword }],
-      { session }
-    );
-    const userProfile = await UserProfile.create(
-      [
-        {
-          userId: user[0]._id,
-          ...userData,
-        },
-      ],
-      { session }
-    );
-
-    // Add user to mailing list if requested
-    await addUserToMailingList({
-      email: user[0].email,
-      firstName: userProfile[0].firstName,
-      lastName: userProfile[0].lastName,
-      userId: user[0]._id,
-      joinMailingList,
-    });
-
-    const token = generateToken(
-      {
-        email: user[0].email,
-        userId: user[0]._id,
-      },
-      "1h"
-    );
-
-    const magicLink = `${process.env.CLIENT_BASE_URL}/api/v1/auth/verify-email?token=${token}`;
-
     const emailInfo = await sendMagicLinkEmail(
-      user[0].email,
-      userProfile[0].firstName,
+      user.email,
+      user.firstName,
       magicLink
     );
 
-    await session.commitTransaction();
     return ApiSuccess.created(
       `Registration Successful, Email has been sent to ${emailInfo.envelope.to}`,
-      { email: user[0].email, id: user[0]._id }
+      { email: user.email, id: user._id }
     );
   } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
+    console.log("Error sending email", error);
+    return ApiSuccess.created(`Registration Successful`, {
+      email: user.email,
+      id: user._id,
+    });
   }
 }
 
@@ -95,16 +80,16 @@ export async function login(userData = {}) {
   const user = await findUserByEmail(email);
   await validatePassword(password, user.password);
 
-  const userProfile = await findUserProfileByIdOrEmail(user._id);
-  if (!userProfile.isVerified) {
+  if (!user.isVerified) {
     throw ApiError.forbidden("Email Not Verified");
   }
 
   const token = generateToken({
     userId: user._id,
-    userProfileId: userProfile._id,
+    user: user._id,
     roles: user.roles,
   });
+
   return ApiSuccess.ok("Login Successful", {
     user: { email: user.email, id: user._id },
     token,
@@ -112,29 +97,27 @@ export async function login(userData = {}) {
 }
 
 export async function getUser(userId) {
-  const userProfile = await findUserProfileByIdOrEmail(userId);
+  const user = await findUserByIdOrEmail(userId);
+  user.password = undefined;
   return ApiSuccess.ok("User Retrieved Successfully", {
-    user: userProfile,
+    user,
   });
 }
 
 export async function sendOTP({ email }) {
-  const userProfile = await findUserProfileByIdOrEmail(email);
-  if (userProfile.isVerified) {
+  const user = await findUserByIdOrEmail(email);
+  if (user.isVerified) {
     return ApiSuccess.ok("User Already Verified");
   }
 
-  const emailInfo = await sendOTPEmail(
-    userProfile.email,
-    userProfile.firstName
-  );
+  const emailInfo = await sendOTPEmail(user.email, user.firstName);
 
   return ApiSuccess.ok(`OTP has been sent to ${emailInfo.envelope.to}`);
 }
 
 export async function verifyOTP({ email, otp }) {
-  const userProfile = await findUserProfileByIdOrEmail(email);
-  if (userProfile.isVerified) {
+  const user = await findUserByIdOrEmail(email);
+  if (user.isVerified) {
     return ApiSuccess.ok("User Already Verified");
   }
 
@@ -143,17 +126,14 @@ export async function verifyOTP({ email, otp }) {
     throw ApiError.badRequest("Invalid or Expired OTP");
   }
 
-  userProfile.isVerified = true;
-  await userProfile.save();
+  user.isVerified = true;
+  await user.save();
   return ApiSuccess.ok("Email Verified");
 }
 
 export async function forgotPassword({ email }) {
-  const userProfile = await findUserProfileByIdOrEmail(email);
-  const emailInfo = await sendOTPEmail(
-    userProfile.email,
-    userProfile.firstName
-  );
+  const user = await findUserByIdOrEmail(email);
+  const emailInfo = await sendOTPEmail(user.email, user.firstName);
   return ApiSuccess.ok(`OTP has been sent to ${emailInfo.envelope.to}`);
 }
 
@@ -174,17 +154,17 @@ export const verifyEmailToken = async (token) => {
     throw ApiError.badRequest("Token is required");
   }
   const { userId } = verifyToken(token);
-  const userProfile = await UserProfile.findOne({ userId });
-  if (!userProfile) {
+  const user = await User.findOne({ userId });
+  if (!user) {
     throw ApiError.notFound("User not found");
   }
 
-  if (userProfile.isVerified) {
+  if (user.isVerified) {
     return ApiSuccess.ok("Email Already Verified");
   }
 
-  userProfile.isVerified = true;
-  await userProfile.save();
+  user.isVerified = true;
+  await user.save();
 
   return ApiSuccess.ok("Email Verified");
 };
@@ -214,7 +194,7 @@ export async function addUserToMailingList(userData = {}) {
 
 const authService = {
   findUserByEmail,
-  findUserProfileByIdOrEmail,
+  findUserByIdOrEmail,
   register,
   login,
   sendOTP,

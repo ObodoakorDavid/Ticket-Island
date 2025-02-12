@@ -4,9 +4,9 @@ import { paginate } from "../../utils/paginate.js";
 import Event from "../models/event.model.js";
 import EventTicket from "../models/eventTicket..js";
 
-export async function createEvent(eventData, userId, userProfileId) {
+export async function createEvent(eventData, userId) {
   const { isApproved, ...otherEventData } = eventData;
-  const event = new Event({ ...otherEventData, userId, user: userProfileId });
+  const event = new Event({ ...otherEventData, user: userId });
   await event.save();
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
@@ -79,7 +79,7 @@ export async function getEvent(eventId) {
 
 export async function updateEvent(eventId, eventData = {}, userId) {
   const event = await Event.findOneAndUpdate(
-    { _id: eventId, userId, isDeleted: false },
+    { _id: eventId, user: userId, isDeleted: false },
     eventData,
     { new: true }
   );

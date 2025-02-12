@@ -14,7 +14,7 @@ import walletService from "./wallet.service.js";
 import { sendTicketsToEmail } from "../../utils/general.js";
 import Order from "../models/order.model.js";
 
-export async function buyTicket(ticketData, userId, userProfileId) {
+export async function buyTicket(ticketData, userId) {
   const { ticketId, eventId, unit, promoCode } = ticketData;
 
   console.log({ eventId, ticketId });
@@ -35,9 +35,8 @@ export async function buyTicket(ticketData, userId, userProfileId) {
   }
 
   const order = new Order({
-    eventId: eventTicket.eventId,
-    userId,
-    user: userProfileId,
+    event: eventTicket.eventId,
+    user: userId,
     basePrice: eventTicket.price * unit,
     netPrice: eventTicket.price * unit,
     paymentStatus: "pending",
@@ -107,7 +106,7 @@ export async function buyTicket(ticketData, userId, userProfileId) {
     order.netPrice = newPriceToPay;
   }
 
-  const user = await authService.findUserProfileByIdOrEmail(userId);
+  const user = await authService.findUserByIdOrEmail(userId);
 
   const { authorizationUrl } = await payWithPayStack(
     user.email,
@@ -132,7 +131,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     throw ApiError.badRequest("Transaction reference has already been used.");
   }
 
-  const order = await Order.findById(transactionId).populate("eventId user");
+  const order = await Order.findById(transactionId).populate("event user");
 
   if (!order) throw ApiError.notFound("Transaction not found");
 
@@ -146,6 +145,8 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     throw ApiError.badRequest("Reference Mismatch");
   }
 
+  console.log(order);
+
   // Update the transaction with the payment status
   order.status = "success";
   order.reference = transactionRef;
@@ -154,7 +155,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
 
   if (order.commissionBornedBy === "bearer") {
     const oraganizerCut = order.netPrice - order.commissionAmount;
-    await walletService.creditWallet(order.eventId.user, oraganizerCut);
+    await walletService.creditWallet(order.user._id, oraganizerCut);
   }
 
   await sendTicketsToEmail(order);

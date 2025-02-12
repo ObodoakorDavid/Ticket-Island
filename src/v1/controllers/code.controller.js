@@ -3,7 +3,7 @@ import codeService from "../services/code.service.js";
 
 export const createCode = asyncWrapper(async (req, res) => {
   const codeData = req.body;
-  const { userId, userProfileId } = req.user;
+  const { userId } = req.user;
   const result = await codeService.createCode(codeData, userId, userProfileId);
   res.status(201).json(result);
 });

@@ -9,7 +9,7 @@ import Ticket from "../v1/models/ticket.model.js";
 export const sendTicketsToEmail = async (transaction) => {
   const userEmail = transaction.user.email;
   const userFirstName = transaction.user.firstName;
-  const eventName = transaction.eventId.title;
+  const eventName = transaction.event.title;
   const numberOfTickets = transaction.unit;
 
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,8 +21,7 @@ export const sendTicketsToEmail = async (transaction) => {
   for (let i = 0; i < numberOfTickets; i++) {
     // Step 1: Create the ticket in the database
     const newTicket = await Ticket.create({
-      eventId: transaction.eventId._id,
-      userId: transaction.user._id,
+      event: transaction.event._id,
       user: transaction.user._id,
       basePrice: transaction.basePrice,
       discountCodeUsed: transaction.isPromoApplied,
@@ -60,7 +59,9 @@ export const sendTicketsToEmail = async (transaction) => {
   // Send all tickets via email
   try {
     await sendQRCodeEmail(userEmail, userFirstName, ticketPaths, eventName);
-  } catch {}
+  } catch (error) {
+    console.log("Error sending the QRCode to email", error);
+  }
 
   // Step 4: Delete the PDFs from storage after sending the email
   try {
