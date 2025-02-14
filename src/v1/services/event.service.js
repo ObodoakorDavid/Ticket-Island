@@ -14,7 +14,7 @@ export async function createEvent(eventData, userId) {
 export async function getAllEvents(query) {
   const { page = 1, limit = 10, search, userId } = query;
 
-  const filterQuery = { isDeleted: false };
+  const filterQuery = { isDeleted: false, isApproved: true };
 
   if (userId) {
     filterQuery.user = userId;
@@ -24,9 +24,6 @@ export async function getAllEvents(query) {
     {
       path: "user",
     },
-    // {
-    //   path: "tickets",
-    // },
   ];
 
   const sort = { createdAt: 1 };
