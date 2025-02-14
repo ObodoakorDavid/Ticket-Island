@@ -14,7 +14,7 @@ export async function createEvent(eventData, userId) {
 export async function getAllEvents(query) {
   const { page = 1, limit = 10, search, userId } = query;
 
-  const filterQuery = { isDeleted: false, isApproved: true };
+  const filterQuery = { isDeleted: false, isPublished: true, isApproved: true };
 
   if (userId) {
     filterQuery.user = userId;
