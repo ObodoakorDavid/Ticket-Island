@@ -60,7 +60,7 @@ async function withdrawWallet(userId, amount, paystackEmail) {
 
   // Log the withdrawal transaction
   const transaction = new TransactionHistory({
-    userProfileId,
+    user: userId,
     transactionType: "debit",
     amount,
     balanceAfterTransaction: newBalance,

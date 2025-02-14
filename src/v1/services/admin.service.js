@@ -8,9 +8,7 @@ export async function updateEvent(eventId, eventData = {}) {
     eventData,
     { new: true }
   );
-
-  console.log("hhhhh");
-
+  
   if (!event) throw ApiError.notFound("Event not found");
 
   return ApiSuccess.ok("Event Updated Successfully", {

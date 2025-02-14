@@ -1,17 +1,6 @@
 import asyncWrapper from "../../middlewares/asyncWrapper.js";
 import orderService from "../services/order.service.js";
 
-// export const createOrder = asyncWrapper(async (req, res) => {
-//   const orderData = req.body;
-//   const { userId, userProfileId } = req.user;
-//   const result = await orderService.createOrder(
-//     orderData,
-//     userId,
-//     userProfileId
-//   );
-//   res.status(201).json(result);
-// });
-
 export const getAllOrders = asyncWrapper(async (req, res) => {
   const query = req.query;
   const { userId } = req.user;
