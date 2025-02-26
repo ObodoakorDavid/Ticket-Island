@@ -15,6 +15,9 @@ const isAuth = asyncWrapper(async (req, res, next) => {
 
 const isAdmin = asyncWrapper(async (req, res, next) => {
   const user = req.user;
+
+  console.log(user);
+
   if (!user.roles.includes("admin")) {
     throw ApiError.unauthorized("Unauthorized, Admins Only");
   }

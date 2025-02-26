@@ -10,23 +10,34 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const defaultSender = "Admin@BCT.com";
+const defaultSender = "Admin@TicketIsland.com";
 const transporter = createTransporter();
 
-const compileTemplate = (filePath) => {
+const compileTemplate = (fileName) => {
+  const filePath = path.join(__dirname, "..", "templates", fileName);
   const templateSource = fs.readFileSync(filePath, "utf8");
   return handlebars.compile(templateSource);
 };
 
-const OTPTemplate = compileTemplate(
-  path.join(__dirname, "..", "templates", "OTPEmail.html")
-);
-const MagicLinkTemplate = compileTemplate(
-  path.join(__dirname, "..", "templates", "MagicLinkEmail.html")
-);
-const QRCodeTemplate = compileTemplate(
-  path.join(__dirname, "..", "templates", "QRCode.html")
-);
+// const OTPTemplate = compileTemplate(
+//   path.join(__dirname, "..", "templates", "OTPEmail.html")
+// );
+// const MagicLinkTemplate = compileTemplate(
+//   path.join(__dirname, "..", "templates", "MagicLinkEmail.html")
+// );
+// const QRCodeTemplate = compileTemplate(
+//   path.join(__dirname, "..", "templates", "QRCode.html")
+// );
+// const PromotionalEmailTemplate = compileTemplate(
+//   path.join(__dirname, "..", "templates", "QRCode.html")
+// );
+
+const templates = {
+  OTPEmail: compileTemplate("OTPEmail.html"),
+  MagicLinkEmail: compileTemplate("MagicLinkEmail.html"),
+  QRCodeEmail: compileTemplate("QRCode.html"),
+  PromotionalEmail: compileTemplate("PromotionalEmail.html"),
+};
 
 const sendEmail = async ({
   to,
@@ -49,7 +60,7 @@ const sendOTPEmail = async (email, userName) => {
   const subject = "OTP Request";
   const date = new Date().getFullYear();
   const emailText = `Hello ${userName},\n\nYour OTP is: ${otp}`;
-  const html = OTPTemplate({ userName, otp, date });
+  const html = templates.OTPEmail({ userName, otp, date });
 
   return sendEmail({ to: email, subject, text: emailText, html });
 };
@@ -58,7 +69,7 @@ const sendMagicLinkEmail = async (email, userName, magicLink) => {
   const subject = "Verify Your Email Address";
   const date = new Date().getFullYear();
   const emailText = `Hello ${userName},\n\nPlease use the following link to verify your email: ${magicLink}`;
-  const html = MagicLinkTemplate({ userName, magicLink, date });
+  const html = templates.MagicLinkEmail({ userName, magicLink, date });
 
   return sendEmail({ to: email, subject, text: emailText, html });
 };
@@ -67,7 +78,7 @@ const sendQRCodeEmail = async (email, userName, ticketPaths, eventName) => {
   const subject = "Your Event Ticket";
   const date = new Date().getFullYear();
   const emailText = `Hello ${userName},\n\nHere is your ticket for ${eventName}. Please use the attached QR code for entry.`;
-  const html = QRCodeTemplate({ userName, eventName, date });
+  const html = templates.QRCodeEmail({ userName, eventName, date });
 
   const attachments = ticketPaths.map((ticketPath, index) => ({
     filename: `eTicket_${index + 1}.pdf`,
@@ -84,4 +95,34 @@ const sendQRCodeEmail = async (email, userName, ticketPaths, eventName) => {
   });
 };
 
-export { sendEmail, sendOTPEmail, sendMagicLinkEmail, sendQRCodeEmail };
+const sendPromotionalEmail = async ({
+  to = [],
+  subject,
+  message,
+  eventName,
+  // userName,
+}) => {
+  const date = new Date().getFullYear();
+  const emailText = message;
+  const html = templates.PromotionalEmail({
+    eventName,
+    // userName,
+    message,
+    date,
+  });
+
+  return sendEmail({
+    to,
+    subject,
+    text: emailText,
+    html,
+  });
+};
+
+export default {
+  sendEmail,
+  sendOTPEmail,
+  sendMagicLinkEmail,
+  sendQRCodeEmail,
+  sendPromotionalEmail,
+};

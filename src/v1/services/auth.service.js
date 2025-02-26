@@ -4,9 +4,9 @@ import User from "../models/user.model.js";
 import OTP from "../models/otp.model.js";
 import ApiError from "../../utils/apiError.js";
 import { hashPassword, validatePassword } from "../../utils/validationUtils.js";
-import { sendMagicLinkEmail, sendOTPEmail } from "../../utils/emailUtils.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import MailingList from "../models/mailingList.model.js";
+import emailUtils from "../../utils/emailUtils.js";
 
 export async function findUserByEmail(email) {
   const user = await User.findOne({ email }).select("+password");
@@ -56,7 +56,7 @@ export async function register(userData = {}) {
   const magicLink = `${process.env.CLIENT_BASE_URL}/api/v1/auth/verify-email?token=${token}`;
 
   try {
-    const emailInfo = await sendMagicLinkEmail(
+    const emailInfo = await emailUtils.sendMagicLinkEmail(
       user.email,
       user.firstName,
       magicLink
@@ -91,7 +91,7 @@ export async function login(userData = {}) {
   });
 
   return ApiSuccess.ok("Login Successful", {
-    user: { email: user.email, id: user._id },
+    user: { email: user.email, id: user._id, roles: user.roles },
     token,
   });
 }
@@ -110,7 +110,7 @@ export async function sendOTP({ email }) {
     return ApiSuccess.ok("User Already Verified");
   }
 
-  const emailInfo = await sendOTPEmail(user.email, user.firstName);
+  const emailInfo = await emailUtils.sendOTPEmail(user.email, user.firstName);
 
   return ApiSuccess.ok(`OTP has been sent to ${emailInfo.envelope.to}`);
 }

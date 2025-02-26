@@ -15,9 +15,7 @@ import { sendTicketsToEmail } from "../../utils/general.js";
 import Order from "../models/order.model.js";
 
 export async function buyTicket(ticketData, userId) {
-  const { ticketId, eventId, unit, promoCode } = ticketData;
-
-  console.log({ eventId, ticketId });
+  const { ticketId, eventId, unit, promoCode, receivePromoEmails } = ticketData;
 
   const event = await eventService.getEventById(eventId);
   const eventTicket = await eventService.getEventTicketById(ticketId);
@@ -42,6 +40,7 @@ export async function buyTicket(ticketData, userId) {
     paymentStatus: "pending",
     unit,
     commissionBornedBy: event.commissionBornedBy,
+    receivePromoEmails,
   });
 
   if (eventTicket.type == "free") {
@@ -145,8 +144,6 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     throw ApiError.badRequest("Reference Mismatch");
   }
 
-  console.log(order);
-
   // Update the transaction with the payment status
   order.status = "success";
   order.reference = transactionRef;
@@ -156,6 +153,10 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
   if (order.commissionBornedBy === "bearer") {
     const oraganizerCut = order.netPrice - order.commissionAmount;
     await walletService.creditWallet(order.user._id, oraganizerCut);
+  }
+
+  if (order.receivePromoEmails) {
+    await eventService.addSubscriberToEvent(order.event._id, order.user._id);
   }
 
   await sendTicketsToEmail(order);

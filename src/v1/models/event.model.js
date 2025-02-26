@@ -148,6 +148,12 @@ const eventSchema = new Schema(
         required: true,
       },
     ],
+    subscribers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,

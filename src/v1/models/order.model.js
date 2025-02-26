@@ -62,6 +62,11 @@ const OrderSchema = new Schema(
       required: false,
       default: "",
     },
+    receivePromoEmails: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
     tickets: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -25,5 +25,10 @@ export const ticketValidator = [
     .isString()
     .withMessage("Promo code must be a string"),
 
+  body("receivePromoEmails")
+    .optional()
+    .isBoolean({ strict: true })
+    .withMessage("receivePromoEmails must be a boolean value"),
+
   handleValidationErrors,
 ];

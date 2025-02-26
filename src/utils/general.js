@@ -1,10 +1,10 @@
-import { sendQRCodeEmail } from "./emailUtils.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 import { generateTicketPDF } from "./generateOTP.js";
 import Ticket from "../v1/models/ticket.model.js";
+import emailUtils from "./emailUtils.js";
 
 export const sendTicketsToEmail = async (transaction) => {
   const userEmail = transaction.user.email;
@@ -58,7 +58,12 @@ export const sendTicketsToEmail = async (transaction) => {
 
   // Send all tickets via email
   try {
-    await sendQRCodeEmail(userEmail, userFirstName, ticketPaths, eventName);
+    await emailUtils.sendQRCodeEmail(
+      userEmail,
+      userFirstName,
+      ticketPaths,
+      eventName
+    );
   } catch (error) {
     console.log("Error sending the QRCode to email", error);
   }
