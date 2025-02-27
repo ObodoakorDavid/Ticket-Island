@@ -119,7 +119,14 @@ const eventSchema = new Schema(
     },
     isDeleted: { type: Boolean, default: false },
     isPublished: { type: Boolean, default: false },
-    isApproved: { type: Boolean, default: false },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    rejectionReason: {
+      type: String,
+    },
     availableCodes: [
       {
         type: mongoose.Schema.Types.ObjectId,

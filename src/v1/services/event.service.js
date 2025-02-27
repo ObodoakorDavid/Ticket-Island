@@ -27,7 +27,7 @@ export async function getAllEvents(query) {
   const filterQuery = {
     isDeleted: false,
     isPublished: true,
-    isApproved: true,
+    status: "approved",
   };
 
   if (userId) {
@@ -40,7 +40,7 @@ export async function getAllEvents(query) {
     },
   ];
 
-  const sort = { createdAt: 1 };
+  const sort = { createdAt: -1 };
 
   if (search) {
     const searchQuery = {
@@ -70,8 +70,58 @@ export async function getAllEvents(query) {
   });
 }
 
+export async function getAllUserEvents(query, userId) {
+  const { page = 1, limit = 10, search, status } = query;
+
+  const filterQuery = {
+    isDeleted: false,
+    user: userId,
+  };
+
+  const statusOptions = ["pending", "approved", "rejected"];
+
+  if (statusOptions.includes(status)) {
+    filterQuery.status = status;
+  }
+
+  const populateOptions = [
+    {
+      path: "user",
+    },
+  ];
+
+  const sort = { createdAt: -1 };
+
+  // if (search) {
+  //   const searchQuery = {
+  //     $or: [
+  //       { title: { $regex: search, $options: "i" } },
+  //       { eventType: { $regex: search, $options: "i" } },
+  //       { state: { $regex: search, $options: "i" } },
+  //       { country: { $regex: search, $options: "i" } },
+  //       { address: { $regex: search, $options: "i" } },
+  //     ],
+  //   };
+  //   Object.assign(filterQuery, searchQuery);
+  // }
+
+  const { documents: events, pagination } = await paginate({
+    model: Event,
+    query: filterQuery,
+    page,
+    limit,
+    sort,
+    populateOptions,
+  });
+
+  return ApiSuccess.ok("Events Retrieved Successfully", {
+    events,
+    pagination,
+  });
+}
+
 export async function getAllEventsForAdmin(query) {
-  const { page = 1, limit = 10, search, userId } = query;
+  const { page = 1, limit = 10, search, userId, status } = query;
 
   const filterQuery = {
     isDeleted: false,
@@ -81,6 +131,12 @@ export async function getAllEventsForAdmin(query) {
     filterQuery.user = userId;
   }
 
+  const statusOptions = ["pending", "approved", "rejected"];
+
+  if (statusOptions.includes(status)) {
+    filterQuery.status = status;
+  }
+
   const populateOptions = [
     {
       path: "user",
@@ -88,7 +144,7 @@ export async function getAllEventsForAdmin(query) {
     },
   ];
 
-  const sort = { createdAt: 1 };
+  const sort = { createdAt: -1 };
 
   if (search) {
     const searchQuery = {
@@ -168,7 +224,34 @@ export async function addSubscriberToEvent(eventId, userId) {
   return ApiSuccess.ok("User subscribed successfully", { event });
 }
 
+export async function isTicketForEvent(eventId, ticketId) {
+  const event = await Event.findOne({
+    _id: eventId,
+    isDeleted: false,
+    tickets: ticketId,
+  });
+
+  if (!event) {
+    throw ApiError.notFound("Ticket does not belong to this event");
+  }
+
+  return event;
+}
+
 // ============ Event Tickets
+
+// Get Ticket By Id
+export async function getEventTicketById(ticketId) {
+  const ticket = await EventTicket.findOne({
+    _id: ticketId,
+    isVisible: true,
+  });
+
+  if (!ticket) throw ApiError.notFound("Event Ticket not found");
+
+  return ticket;
+}
+
 // Create a new ticket for an event
 export async function createEventTicket(eventId, eventTicketData) {
   const event = await Event.findById(eventId);
@@ -188,32 +271,36 @@ export async function createEventTicket(eventId, eventTicketData) {
 }
 
 // Retrieve all tickets for an event
-export async function getEventTickets(eventId) {
-  const event = await Event.findOne({
-    _id: eventId,
-    isDeleted: false,
-  }).populate({
-    path: "tickets",
-    match: { isVisible: true },
-  });
+export async function getEventTickets(eventId, query = {}) {
+  const { page = 1, limit = 10 } = query;
 
-  if (!event) throw ApiError.notFound("Event not found");
+  const filterQuery = {
+    eventId,
+    isVisible: true,
+  };
+
+  const populateOptions = [
+    {
+      path: "eventId",
+      select: ["title"],
+    },
+  ];
+
+  const sort = { createdAt: -1 };
+
+  const { documents: tickets, pagination } = await paginate({
+    model: EventTicket,
+    query: filterQuery,
+    page,
+    limit,
+    sort,
+    populateOptions,
+  });
 
   return ApiSuccess.ok("Event Tickets Retrieved Successfully", {
-    tickets: event.tickets,
+    tickets,
+    pagination,
   });
-}
-
-// Retrieve a specific ticket for an event
-export async function getEventTicketById(ticketId) {
-  const ticket = await EventTicket.findOne({
-    _id: ticketId,
-    isVisible: true,
-  });
-
-  if (!ticket) throw ApiError.notFound("Event Ticket not found");
-
-  return ticket;
 }
 
 // Retrieve a specific ticket for an event
@@ -265,10 +352,13 @@ export async function deleteEventTicket(eventId, ticketId) {
 const eventService = {
   createEvent,
   getAllEvents,
+  getAllUserEvents,
   getEvent,
   updateEvent,
-  addSubscriberToEvent,
   deleteEvent,
+  addSubscriberToEvent,
+  isTicketForEvent,
+  //
   createEventTicket,
   getEventTickets,
   getEventTicket,

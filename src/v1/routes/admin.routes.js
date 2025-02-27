@@ -1,7 +1,10 @@
 import express from "express";
 import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
 import { isAdmin, isAuth } from "../../middlewares/auth.js";
-import { eventUpdateValidator } from "../validators/event.validator.js";
+import {
+  eventUpdateValidator,
+  eventUpdateValidatorForAdmin,
+} from "../validators/event.validator.js";
 import {
   getAllEventsForAdmin,
   getAllPromotionalEmails,
@@ -17,7 +20,7 @@ router.route("/events").get(getAllEventsForAdmin).all(methodNotAllowed);
 
 router
   .route("/events/:eventId")
-  .patch(eventUpdateValidator, updateEvent)
+  .patch(eventUpdateValidatorForAdmin, updateEvent)
   .all(methodNotAllowed);
 
 // Promotional Email

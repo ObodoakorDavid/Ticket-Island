@@ -21,14 +21,18 @@ export const paginate = async ({
     queryBuilder = queryBuilder.populate(option);
   });
 
-  const documents = await queryBuilder;
+  const [documents, totalCount, totalDocuments] = await Promise.all([
+    queryBuilder,
+    model.countDocuments(query), // Count based on the query
+    model.estimatedDocumentCount(), // Total count without filtering
+  ]);
 
-  const totalCount = await model.countDocuments(query);
   const totalPages = Math.ceil(totalCount / limit);
 
   return {
     documents,
     pagination: {
+      // totalDocuments,
       totalCount,
       totalPages,
       currentPage: Number(page),

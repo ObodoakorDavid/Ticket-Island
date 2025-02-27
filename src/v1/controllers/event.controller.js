@@ -14,6 +14,13 @@ export const getAllEvents = asyncWrapper(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const getAllUserEvents = asyncWrapper(async (req, res) => {
+  const query = req.query;
+  const { userId } = req.user;
+  const result = await eventService.getAllUserEvents(query, userId);
+  res.status(200).json(result);
+});
+
 export const getEvent = asyncWrapper(async (req, res) => {
   const { eventId } = req.params;
   const result = await eventService.getEvent(eventId);

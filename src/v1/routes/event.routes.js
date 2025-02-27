@@ -11,6 +11,7 @@ import {
   getEventTicket,
   updateEventTicket,
   deleteEventTicket,
+  getAllUserEvents,
 } from "../controllers/event.controller.js";
 import {
   eventUpdateValidator,
@@ -29,6 +30,9 @@ router
   .post(eventValidator, isAuth, createEvent)
   .get(getAllEvents)
   .all(methodNotAllowed);
+
+// Routes for user events
+router.route("/user").get(isAuth, getAllUserEvents).all(methodNotAllowed);
 
 router
   .route("/:eventId")

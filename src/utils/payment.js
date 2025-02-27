@@ -4,8 +4,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const payWithPayStack = async (email, amount, ticketId) => {
-  console.log({ SERVER_BASE_URL: process.env.SERVER_BASE_URL });
-
   try {
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",

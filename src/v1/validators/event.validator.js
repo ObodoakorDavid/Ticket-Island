@@ -361,6 +361,27 @@ export const eventUpdateValidator = [
   handleValidationErrors,
 ];
 
+export const eventUpdateValidatorForAdmin = [
+  body("status")
+    .exists()
+    .withMessage("Status is required")
+    .notEmpty()
+    .withMessage("Status can't be empty")
+    .isIn(["approved", "rejected"])
+    .withMessage("Status must be either 'approved' or 'rejected'"),
+
+  body("rejectionReason")
+    .if((value, { req }) => req.body.status === "rejected") // Only validate if isRejected is true
+    .exists()
+    .withMessage("rejectionReason is required when isRejected is true")
+    .notEmpty()
+    .withMessage("Rejection reason can't be empty")
+    .isString()
+    .withMessage("Rejection reason must be a string"),
+
+  handleValidationErrors,
+];
+
 // Event Ticket Validator
 export const eventTicketValidator = [
   body("name")

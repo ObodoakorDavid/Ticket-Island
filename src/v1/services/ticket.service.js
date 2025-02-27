@@ -19,6 +19,7 @@ export async function buyTicket(ticketData, userId) {
 
   const event = await eventService.getEventById(eventId);
   const eventTicket = await eventService.getEventTicketById(ticketId);
+  eventService.isTicketForEvent(eventId, ticketId);
 
   if (unit > eventTicket.maximumQuantity) {
     throw ApiError.unprocessableEntity(

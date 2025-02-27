@@ -38,5 +38,14 @@ export const promotionalEmailUpdateValidator = [
     .isIn(["approved", "rejected"])
     .withMessage("Status must be either 'approved' or 'rejected'"),
 
+  body("rejectionReason")
+    .if((value, { req }) => req.body.status === "rejected") // Only validate if isRejected is true
+    .exists()
+    .withMessage("rejectionReason is required when isRejected is true")
+    .notEmpty()
+    .withMessage("Rejection reason can't be empty")
+    .isString()
+    .withMessage("Rejection reason must be a string"),
+
   handleValidationErrors,
 ];

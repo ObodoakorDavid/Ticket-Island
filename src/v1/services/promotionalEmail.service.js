@@ -14,7 +14,9 @@ export async function getAllPromotionalEmails(query) {
     filterQuery.user = userId;
   }
 
-  if (status) {
+  const statusOptions = ["pending", "approved", "rejected"];
+
+  if (statusOptions.includes(status)) {
     filterQuery.status = status;
   }
 
@@ -26,19 +28,6 @@ export async function getAllPromotionalEmails(query) {
   ];
 
   const sort = { createdAt: -1 };
-
-  //   if (search) {
-  //     const searchQuery = {
-  //       $or: [
-  //         { title: { $regex: search, $options: "i" } },
-  //         { eventType: { $regex: search, $options: "i" } },
-  //         { state: { $regex: search, $options: "i" } },
-  //         { country: { $regex: search, $options: "i" } },
-  //         { address: { $regex: search, $options: "i" } },
-  //       ],
-  //     };
-  //     Object.assign(filterQuery, searchQuery);
-  //   }
 
   const { documents: promotionalEmails, pagination } = await paginate({
     model: PromotionalEmail,
@@ -60,7 +49,9 @@ export async function getUserPromotionalEmails(userId, query) {
 
   const filterQuery = { user: userId, isDeleted: false };
 
-  if (status) {
+  const statusOptions = ["pending", "approved", "rejected"];
+
+  if (statusOptions.includes(status)) {
     filterQuery.status = status;
   }
 
@@ -170,7 +161,12 @@ export async function updatePromotionalEmail(
 
   await promotionalEmail.save();
 
-  return ApiSuccess.ok("Promotional email sent out", {
+  const responseMessage =
+    status === "approved"
+      ? "Promotional emails sent out"
+      : "Promotional emails declined";
+
+  return ApiSuccess.ok(responseMessage, {
     promotionalEmail,
   });
 }
