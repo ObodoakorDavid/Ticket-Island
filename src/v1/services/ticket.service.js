@@ -13,6 +13,17 @@ import { calculateCommission } from "../../utils/calculations.js";
 import walletService from "./wallet.service.js";
 import { sendTicketsToEmail } from "../../utils/general.js";
 import Order from "../models/order.model.js";
+import orderService from "./order.service.js";
+import QRCode from "qrcode";
+import { generateTicketPDF } from "../../utils/generateOTP.js";
+
+//
+import path from "path";
+import { fileURLToPath } from "url";
+import { formatDate } from "../../lib/utils.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pdfDir = path.join(__dirname, "../storage/");
 
 export async function buyTicket(ticketData, userId) {
   const { ticketId, eventId, unit, promoCode, receivePromoEmails } = ticketData;
@@ -42,6 +53,7 @@ export async function buyTicket(ticketData, userId) {
     unit,
     commissionBornedBy: event.commissionBornedBy,
     receivePromoEmails,
+    eventTicket: ticketId,
   });
 
   if (eventTicket.type == "free") {
@@ -51,14 +63,22 @@ export async function buyTicket(ticketData, userId) {
 
     await order.save();
 
-    await sendTicketsToEmail(order);
+    const { ticketPaths } = await generateNewTickets(order._id);
 
-    return ApiSuccess.ok(
-      "Transaction Successful, Ticket has been to sent to your email",
-      {
-        order,
-      }
-    );
+    const emailSent = await sendTicketsToEmail({
+      userEmail: order.user.email,
+      userFirstName: order.user.firstName,
+      ticketPaths,
+      eventName: order.event.name,
+    });
+
+    const responseMessage = emailSent
+      ? "Transaction Successful, Ticket has been to sent to your email"
+      : "Transaction Successful";
+
+    return ApiSuccess.ok(responseMessage, {
+      order,
+    });
   }
 
   let priceToPay = eventTicket.price * unit;
@@ -87,14 +107,22 @@ export async function buyTicket(ticketData, userId) {
       await getAndIncrementPromoCodeUsage(order.promoCode);
     }
 
-    await sendTicketsToEmail(order);
+    const { ticketPaths } = await generateNewTickets(order._id);
 
-    return ApiSuccess.ok(
-      "Transaction Successful, Ticket has been to sent to your email",
-      {
-        order,
-      }
-    );
+    const emailSent = await sendTicketsToEmail({
+      userEmail: order.user.email,
+      userFirstName: order.user.firstName,
+      ticketPaths,
+      eventName: order.event.name,
+    });
+
+    const responseMessage = emailSent
+      ? "Transaction Successful, Ticket has been to sent to your email"
+      : "Transaction Successful";
+
+    return ApiSuccess.ok(responseMessage, {
+      order,
+    });
   }
 
   const commission = calculateCommission(priceToPay, event.pricingPlan);
@@ -160,7 +188,14 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     await eventService.addSubscriberToEvent(order.event._id, order.user._id);
   }
 
-  await sendTicketsToEmail(order);
+  const { ticketPaths } = await generateNewTickets(order._id);
+
+  await sendTicketsToEmail({
+    userEmail: order.user.email,
+    userFirstName: order.user.firstName,
+    ticketPaths,
+    eventName: order.event.name,
+  });
 
   return order;
 }
@@ -192,6 +227,7 @@ export async function getAllTickets(query) {
     query: filterQuery,
     page,
     limit,
+    sort: { createdAt: -1 },
   });
 
   return ApiSuccess.ok("Tickets Retrieved Successfully", {
@@ -234,6 +270,106 @@ export async function deleteTicket(ticketId, userId) {
   return ApiSuccess.ok("Ticket Deleted Successfully");
 }
 
+export async function generateNewTickets(orderId) {
+  const order = await orderService.getOrderById(orderId);
+
+  // const userEmail = order.user.email;
+  const userFirstName = order.user.firstName;
+  const userLastName = order.user.lastName;
+  const eventName = order.event.title;
+  const numberOfTickets = order.unit;
+  const startDate = formatDate(order.event.startTime);
+  const endDate = formatDate(order.event.endTime);
+  const ticketName = order.eventTicket.name;
+
+  const ticketPaths = [];
+  const createdTickets = [];
+
+  for (let i = 0; i < numberOfTickets; i++) {
+    const newTicket = await Ticket.create({
+      event: order.event._id,
+      user: order.user._id,
+      basePrice: order.basePrice,
+      discountCodeUsed: order.isPromoApplied,
+      netPrice: order.netPrice / numberOfTickets,
+    });
+
+    if (order.isPromoApplied) {
+      newTicket.promoCode = order.promoCode;
+    }
+
+    createdTickets.push(newTicket);
+
+    // Step 2: Generate QR code using the ticket ID
+    const qrCodeData = await QRCode.toDataURL(
+      `${
+        process.env.SERVER_BASE_URL
+      }/api/v1/tickets/${newTicket._id.toString()}`
+    );
+
+    // Update the ticket with the generated QR code
+    newTicket.qrCode = qrCodeData;
+    await newTicket.save();
+
+    // Step 3: Generate PDF for each ticket
+    const pdfPath = path.join(pdfDir, `eTicket_${newTicket._id}.pdf`);
+    await generateTicketPDF({
+      userFirstName,
+      userLastName,
+      eventName,
+      qrCodeData,
+      startDate,
+      endDate,
+      ticketName,
+      pdfPath,
+    });
+
+    ticketPaths.push(pdfPath);
+  }
+
+  order.tickets = createdTickets.map((ticket) => ticket._id);
+  await order.save();
+  return { ticketPaths, createdTickets };
+}
+
+export async function generateExistingTickets(orderId) {
+  // const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  // const pdfDir = path.join(__dirname, "../storage/");
+
+  const order = await orderService.getOrderById(orderId);
+
+  const ticketPaths = [];
+  const createdTickets = [];
+
+  // const userEmail = order.user.email;
+  const userFirstName = order.user.firstName;
+  const userLastName = order.user.lastName;
+  const eventName = order.event.title;
+  // const numberOfTickets = order.unit;
+  const startDate = formatDate(order.event.startTime);
+  const endDate = formatDate(order.event.endTime);
+  const ticketName = order.eventTicket.name;
+
+  for (const ticket of order.tickets) {
+    const pdfPath = path.join(pdfDir, `eTicket_${ticket._id}.pdf`);
+    await generateTicketPDF({
+      userFirstName,
+      userLastName,
+      eventName,
+      qrCodeData: ticket.qrCode,
+      startDate,
+      ticketName,
+      endDate,
+      pdfPath,
+    });
+
+    ticketPaths.push(pdfPath);
+    createdTickets.push(ticket);
+  }
+
+  return { ticketPaths, createdTickets };
+}
+
 const ticketService = {
   buyTicket,
   getAllTickets,
@@ -241,6 +377,8 @@ const ticketService = {
   updateTicket,
   deleteTicket,
   handlePaymentSuccess,
+  generateNewTickets,
+  generateExistingTickets,
 };
 
 export default ticketService;

@@ -1,54 +1,41 @@
 import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
+import { sendTicketsToEmail } from "../../utils/general.js";
 import { paginate } from "../../utils/paginate.js";
 import Order from "../models/order.model.js";
+import ticketService from "./ticket.service.js";
 
-// export async function createOrder(orderData, userId, userProfileId) {
-//   const {
-//     eventId,
-//     tickets,
-//     unit,
-//     basePrice,
-//     netPrice,
-//     promoCode,
-//     isPromoApplied,
-//     commissionBornedBy,
-//   } = orderData;
+export async function getOrderById(orderId) {
+  const order = await Order.findOne({
+    _id: orderId,
+  }).populate([
+    {
+      path: "user",
+    },
+    {
+      path: "tickets",
+    },
+    {
+      path: "event",
+    },
+    {
+      path: "eventTicket",
+    },
+  ]);
 
-//   const order = new Order({
-//     eventId,
-//     userId,
-//     user: userProfileId,
-//     tickets,
-//     unit,
-//     basePrice,
-//     netPrice,
-//     promoCode,
-//     isPromoApplied,
-//     commissionBornedBy,
-//   });
-//   await order.save();
-//   return ApiSuccess.ok("Order Created Successfully", { order });
-// }
-
-// Retrieve all orders
+  if (!order) throw ApiError.notFound("Order not found");
+  return order;
+}
 
 export async function getAllOrders(userId, query) {
   const { page = 1, limit = 10, search } = query;
 
-  const filterQuery = { userId };
+  const filterQuery = { user: userId };
   const populateOptions = [
     {
       path: "user",
-      select: "-userId",
+      select: ["firstName", "lastName"],
     },
-    {
-      path: "eventId",
-    },
-    // {
-    //   path: "tickets",
-    //   select: "-qrcode",
-    // },
   ];
 
   const sort = { createdAt: -1 };
@@ -80,7 +67,7 @@ export async function getAllOrders(userId, query) {
 }
 
 // Retrieve a specific order by ID
-export async function getOrderById(orderId) {
+export async function getOrder(orderId) {
   const order = await Order.findOne({
     _id: orderId,
   }).populate("tickets");
@@ -89,32 +76,31 @@ export async function getOrderById(orderId) {
   return ApiSuccess.ok("Order Retrieved Successfully", { order });
 }
 
-// // Update a specific order
-// export async function updateOrder(orderId, data, userId) {
-//   const order = await Order.findOneAndUpdate({ _id: orderId, userId }, data, {
-//     new: true,
-//   });
+export async function resendOrderTicketsToEmail(orderId) {
+  const order = await getOrderById(orderId);
 
-//   if (!order) throw ApiError.notFound("Order not found");
+  const { ticketPaths } = await ticketService.generateExistingTickets(
+    order._id
+  );
 
-//   return ApiSuccess.ok("Order Updated Successfully", { order });
-// }
+  const emailSent = await sendTicketsToEmail({
+    userEmail: order.user.email,
+    userFirstName: order.user.firstName,
+    ticketPaths,
+    eventName: order.event.name,
+  });
 
-// // Delete a specific order
-// export async function deleteOrder(orderId) {
-//   const order = await Order.findOneAndDelete({ _id: orderId });
-
-//   if (!order) throw ApiError.notFound("Order not found");
-
-//   return ApiSuccess.ok("Order Deleted Successfully");
-// }
+  if (!emailSent) {
+    throw ApiError.internalServerError("Unable to send tickets to mail");
+  }
+  return ApiSuccess.ok("Tickets has been sent to your email");
+}
 
 const orderService = {
-  //   createOrder,
   getAllOrders,
   getOrderById,
-  //   updateOrder,
-  //   deleteOrder,
+  getOrder,
+  resendOrderTicketsToEmail,
 };
 
 export default orderService;

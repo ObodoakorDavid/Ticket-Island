@@ -5,57 +5,17 @@ import QRCode from "qrcode";
 import { generateTicketPDF } from "./generateOTP.js";
 import Ticket from "../v1/models/ticket.model.js";
 import emailUtils from "./emailUtils.js";
+import { formatDate } from "../lib/utils.js";
+import orderService from "../v1/services/order.service.js";
+import { generateNewTickets } from "../v1/services/ticket.service.js";
 
-export const sendTicketsToEmail = async (transaction) => {
-  const userEmail = transaction.user.email;
-  const userFirstName = transaction.user.firstName;
-  const eventName = transaction.event.title;
-  const numberOfTickets = transaction.unit;
-
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const pdfDir = path.join(__dirname, "../storage/");
-
-  const ticketPaths = [];
-  const createdTickets = [];
-
-  for (let i = 0; i < numberOfTickets; i++) {
-    // Step 1: Create the ticket in the database
-    const newTicket = await Ticket.create({
-      event: transaction.event._id,
-      user: transaction.user._id,
-      basePrice: transaction.basePrice,
-      discountCodeUsed: transaction.isPromoApplied,
-      netPrice: transaction.netPrice / numberOfTickets,
-    });
-
-    if (transaction.isPromoApplied) {
-      newTicket.promoCode = transaction.promoCode;
-    }
-
-    createdTickets.push(newTicket);
-
-    // Step 2: Generate QR code using the ticket ID
-    const qrCodeData = await QRCode.toDataURL(
-      `${
-        process.env.SERVER_BASE_URL
-      }/api/v1/tickets/${newTicket._id.toString()}`
-    );
-
-    // Update the ticket with the generated QR code
-    newTicket.qrCode = qrCodeData;
-    await newTicket.save();
-
-    // Step 3: Generate PDF for each ticket
-    const pdfPath = path.join(pdfDir, `eTicket_${newTicket._id}.pdf`);
-    await generateTicketPDF({ userFirstName, eventName, qrCodeData, pdfPath });
-
-    ticketPaths.push(pdfPath);
-  }
-
-  // Attach tickets to the transaction
-  transaction.tickets = createdTickets.map((ticket) => ticket._id);
-  await transaction.save();
-
+export const sendTicketsToEmail = async ({
+  userEmail,
+  userFirstName,
+  ticketPaths,
+  eventName,
+}) => {
+  let emailSent = false;
   // Send all tickets via email
   try {
     await emailUtils.sendQRCodeEmail(
@@ -64,11 +24,23 @@ export const sendTicketsToEmail = async (transaction) => {
       ticketPaths,
       eventName
     );
+
+    emailSent = true;
   } catch (error) {
     console.log("Error sending the QRCode to email", error);
+    emailSent = false;
   }
 
+  deleteTicketsFromStorage(ticketPaths);
+
+  return emailSent;
+};
+
+export const deleteTicketsFromStorage = async (ticketPaths = []) => {
   // Step 4: Delete the PDFs from storage after sending the email
+
+  console.log({ ticketPaths });
+
   try {
     for (const ticketPath of ticketPaths) {
       fs.unlink(ticketPath, (err) => {

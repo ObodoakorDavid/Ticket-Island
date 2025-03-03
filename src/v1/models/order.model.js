@@ -10,6 +10,11 @@ const OrderSchema = new Schema(
       ref: "Event",
       required: true,
     },
+    eventTicket: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "EventTicket",
+      required: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

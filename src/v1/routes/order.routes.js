@@ -1,6 +1,10 @@
 import express from "express";
 import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
-import { getAllOrders, getOrder } from "../controllers/order.controller.js";
+import {
+  getAllOrders,
+  getOrder,
+  resendOrderTicketsToEmail,
+} from "../controllers/order.controller.js";
 // import { orderValidator } from "../validators/order.validator.js";
 import { isAuth } from "../../middlewares/auth.js";
 
@@ -15,6 +19,13 @@ router
 router
   .route("/:orderId")
   .get(isAuth, getOrder)
+  //   .put(isAuth, updateOrder)
+  //   .delete(isAuth, deleteOrder)
+  .all(methodNotAllowed);
+
+router
+  .route("/:orderId/resend")
+  .get(isAuth, resendOrderTicketsToEmail)
   //   .put(isAuth, updateOrder)
   //   .delete(isAuth, deleteOrder)
   .all(methodNotAllowed);

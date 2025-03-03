@@ -1,6 +1,7 @@
 import otpGenerator from "otp-generator";
 import PDFDocument from "pdfkit";
 import fs from "fs";
+import path from "path";
 
 const generateOTP = () => {
   const otp = otpGenerator.generate(4, {
@@ -16,11 +17,24 @@ export default generateOTP;
 
 export const generateTicketPDF = ({
   userFirstName,
+  userLastName,
   eventName,
   qrCodeData,
+  startDate,
+  ticketName,
+  endDate,
   pdfPath,
 }) => {
+  console.log({ pdfPath });
+
   return new Promise((resolve, reject) => {
+    const dir = path.dirname(pdfPath);
+
+    // Ensure the directory exists
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
     const doc = new PDFDocument();
     const stream = fs.createWriteStream(pdfPath);
 
@@ -29,9 +43,11 @@ export const generateTicketPDF = ({
     doc.fontSize(20).text("Event Ticket", { align: "center" });
     doc.moveDown();
 
-    doc.fontSize(14).text(`Name: ${userFirstName}`);
+    doc.fontSize(14).text(`Name: ${userLastName} ${userFirstName}`);
     doc.text(`Event: ${eventName}`);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`);
+    doc.text(`Start Date: ${startDate}`);
+    doc.text(`End Date: ${endDate}`);
+    doc.text(`Ticket Type: ${ticketName}`);
     doc.moveDown();
 
     doc.text("Scan the QR code below for entry:", { align: "center" });

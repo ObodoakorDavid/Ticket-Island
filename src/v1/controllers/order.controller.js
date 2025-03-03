@@ -10,7 +10,13 @@ export const getAllOrders = asyncWrapper(async (req, res) => {
 
 export const getOrder = asyncWrapper(async (req, res) => {
   const { orderId } = req.params;
-  const result = await orderService.getOrderById(orderId);
+  const result = await orderService.getOrder(orderId);
+  res.status(200).json(result);
+});
+
+export const resendOrderTicketsToEmail = asyncWrapper(async (req, res) => {
+  const { orderId } = req.params;
+  const result = await orderService.resendOrderTicketsToEmail(orderId);
   res.status(200).json(result);
 });
 
