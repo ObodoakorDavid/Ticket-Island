@@ -279,6 +279,8 @@ export async function getEventTickets(eventId, query = {}) {
     isVisible: true,
   };
 
+  console.log({ eventId });
+
   const populateOptions = [
     {
       path: "eventId",

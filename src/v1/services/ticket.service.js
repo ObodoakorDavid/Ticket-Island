@@ -23,7 +23,7 @@ import { fileURLToPath } from "url";
 import { formatDate } from "../../lib/utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pdfDir = path.join(__dirname, "../storage/");
+const pdfDir = path.join(__dirname, "../../storage/");
 
 export async function buyTicket(ticketData, userId) {
   const { ticketId, eventId, unit, promoCode, receivePromoEmails } = ticketData;
@@ -228,6 +228,7 @@ export async function getAllTickets(query) {
     page,
     limit,
     sort: { createdAt: -1 },
+    select: ["-qrCode"],
   });
 
   return ApiSuccess.ok("Tickets Retrieved Successfully", {
@@ -270,6 +271,7 @@ export async function deleteTicket(ticketId, userId) {
   return ApiSuccess.ok("Ticket Deleted Successfully");
 }
 
+// Utility methods
 export async function generateNewTickets(orderId) {
   const order = await orderService.getOrderById(orderId);
 

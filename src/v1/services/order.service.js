@@ -70,7 +70,7 @@ export async function getAllOrders(userId, query) {
 export async function getOrder(orderId) {
   const order = await Order.findOne({
     _id: orderId,
-  }).populate("tickets");
+  }).populate([{ path: "tickets", select: ["-qrCode"] }]);
 
   if (!order) throw ApiError.notFound("Order not found");
   return ApiSuccess.ok("Order Retrieved Successfully", { order });

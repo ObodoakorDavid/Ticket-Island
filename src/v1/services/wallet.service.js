@@ -1,12 +1,28 @@
 import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
-import TransactionHistory from "../models/transactionHistory.model.js";
-import axios from "axios";
+import Transaction from "../models/transaction.model.js";
 import authService from "./auth.service.js";
+import paystackClient from "../../lib/paystackClient.js";
+import Wallet from "../models/wallet.model.js";
 
-// Paystack API setup
-const PAYSTACK_SECRET_KEY = "your-paystack-secret-key";
-const PAYSTACK_BASE_URL = "https://api.paystack.co";
+async function getWallet(userId) {
+  const existingWallet = await Wallet.findOne({ user: userId });
+
+  if (!existingWallet) {
+    const wallet = await Wallet.create({
+      user: userId,
+    });
+    return wallet;
+  }
+
+  return existingWallet;
+}
+
+async function getWalletDetails(userId) {
+  const wallet = await getWallet(userId);
+
+  return ApiSuccess.ok("Bank Details Retrieved Successfully", { wallet });
+}
 
 // Function to credit the user's wallet
 async function creditWallet(userId, amount) {
@@ -16,108 +32,122 @@ async function creditWallet(userId, amount) {
 
   const user = await authService.findUserByIdOrEmail(userId);
   user.balance += amount;
-  const newBalance = user.balance;
   await user.save();
 
   // Log the credit transaction
-  const transaction = new TransactionHistory({
+  const transaction = new Transaction({
     user: userId,
     transactionType: "credit",
     amount,
-    balanceAfterTransaction: newBalance,
+    status: "successful",
+    adminApproval: "approved",
   });
   await transaction.save();
 
-  return ApiSuccess.ok("Wallet credited successfully", { balance: newBalance });
+  return ApiSuccess.ok("Wallet credited successfully", {
+    balance: user.balance,
+  });
 }
 
 // Function to withdraw funds from the user's wallet (interacts with Paystack)
-async function withdrawWallet(userId, amount, paystackEmail) {
+async function withdrawWallet(userId, amount) {
   if (amount <= 0) {
     throw ApiError.badRequest("Amount must be greater than zero");
   }
 
   const user = await authService.findUserByIdOrEmail(userId);
+
   if (user.balance < amount) {
     throw ApiError.badRequest("Insufficient balance");
   }
 
-  //TODO
-  // Initiate withdrawal via Paystack (assuming it's an account payout)
-  const withdrawalResponse = await initiatePaystackWithdrawal(
-    amount,
-    paystackEmail
-  );
+  const wallet = await Wallet.findOne({ user: userId });
 
-  if (withdrawalResponse.status !== "success") {
-    throw ApiError.internalServerError("Paystack withdrawal failed");
+  if (!wallet.isSubmitted) {
+    throw ApiError.forbidden("Please update your bank details");
   }
 
   // Update the user's balance
   user.balance -= amount;
-  const newBalance = user.balance;
   await user.save();
 
   // Log the withdrawal transaction
-  const transaction = new TransactionHistory({
+  const transaction = new Transaction({
     user: userId,
     transactionType: "debit",
     amount,
-    balanceAfterTransaction: newBalance,
+    accountNumber: wallet.bankAccountNumber,
+    accountName: wallet.name,
+    bankName: wallet.bankName,
   });
   await transaction.save();
 
-  return ApiSuccess.ok("Withdrawal successful", { balance: newBalance });
+  return ApiSuccess.ok("Withdrawal request submitted", {
+    transaction,
+  });
 }
 
-// Function to interact with Paystack API for withdrawal
-async function initiatePaystackWithdrawal(amount, email) {
-  try {
-    const response = await axios.post(
-      `${PAYSTACK_BASE_URL}/transferrecipient`,
-      {
-        email,
-        amount,
-        type: "nuban", // Example: assuming this is for Nigerian bank account transfers
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        },
-      }
-    );
+// Create Virtual Account
+async function updateWalletDetails(userId, walletDetails = {}) {
+  const wallet = await Wallet.findOne({ user: userId });
 
-    if (response.status === 200) {
-      return { status: "success", data: response.data };
-    } else {
-      return { status: "failed", data: response.data };
-    }
+  const { bankCode, accountNumber } = walletDetails;
+
+  try {
+    const { data } = await paystackClient.post("/transferrecipient", {
+      type: "nuban",
+      account_number: accountNumber,
+      bank_code: bankCode,
+      currency: "NGN",
+    });
+
+    wallet.recipientCode = data.data.recipient_code;
+    wallet.currency = data.data.currency;
+    wallet.name = data.data.details.account_name;
+    wallet.bankName = data.data.details.bank_name;
+    wallet.bankAccountNumber = data.data.details.account_number;
+    wallet.isSubmitted = true;
+
+    await wallet.save();
+
+    return ApiSuccess.ok("Wallet Updated", { wallet });
   } catch (error) {
-    console.error("Paystack API error:", error.response || error);
-    return { status: "failed", data: error.message };
+    const { response } = error;
+    console.log(response?.data);
+    if (
+      response?.data?.message ===
+      "Your IP address is not allowed to make this call"
+    ) {
+      throw ApiError.forbidden(
+        "Access from this IP denied! Please contact admin"
+      );
+    }
+
+    if (response?.data?.code === "invalid_bank_code") {
+      throw ApiError.badRequest("Account Does Not Exist");
+    }
+
+    throw ApiError.internalServerError("Wallet Creation Failed");
   }
 }
 
-// Function to get transaction history for a user
-async function getTransactionHistory(userId, query) {
-  const { page = 1, limit = 10 } = query;
-
-  const filterQuery = { user: userId };
-
-  const transactions = await TransactionHistory.find(filterQuery)
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .sort({ createdAt: -1 }); // Sort by most recent transaction
-
-  return ApiSuccess.ok("Transaction history retrieved successfully", {
-    transactions,
-  });
+// Banks
+async function getAllBanks() {
+  try {
+    const response = await paystackClient.get(`/bank?currency=NGN`);
+    return ApiSuccess.ok("Banks Retrieved Successfully", response.data.data);
+  } catch (error) {
+    throw ApiError.internalServerError("Unable to get banks");
+  }
 }
 
 const walletService = {
   creditWallet,
   withdrawWallet,
-  getTransactionHistory,
+  getAllBanks,
+  updateWalletDetails,
+  getWallet,
+  getWalletDetails,
 };
 
 export default walletService;
