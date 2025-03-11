@@ -96,7 +96,7 @@ export async function buyTicket(ticketData, userId) {
     priceToPay = amountAfterDiscount;
   }
 
-  if (priceToPay <= 0 || eventTicket.type == "free") {
+  if (priceToPay <= 0) {
     order.netPrice = 0;
     order.basePrice = 0;
     order.status = "success";
@@ -170,13 +170,20 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
   }
 
   if (data?.amount / 100 !== order.netPrice) {
-    throw ApiError.badRequest("Reference Mismatch");
+    throw ApiError.badRequest("Reference amount Mismatch");
   }
 
   // Update the transaction with the payment status
   order.status = "success";
   order.reference = transactionRef;
   await order.save();
+
+  // Give cashback
+  const user = await authService.findUserByIdOrEmail(order.user._id);
+  const cashbackAmount = order.netPrice * 0.001;
+  user.cashbackBalance = cashbackAmount;
+
+  // Increment Promo code usage
   await getAndIncrementPromoCodeUsage(order.promoCode);
 
   if (order.commissionBornedBy === "bearer") {

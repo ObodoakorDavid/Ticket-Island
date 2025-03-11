@@ -146,6 +146,10 @@ async function handlePaystackWebhook(event) {
     throw ApiError.notFound("Transaction not found");
   }
 
+  transaction.reference = data.reference;
+
+  await transaction.save();
+
   // Prevent duplicate updates
   if (transaction.status === "successful" || transaction.status === "failed") {
     return ApiSuccess.ok("Transaction already processed", transaction);

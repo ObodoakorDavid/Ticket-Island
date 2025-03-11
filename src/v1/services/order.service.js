@@ -36,6 +36,10 @@ export async function getAllOrders(userId, query) {
       path: "user",
       select: ["firstName", "lastName"],
     },
+    {
+      path: "event",
+      select: ["title", "address"],
+    },
   ];
 
   const sort = { createdAt: -1 };
@@ -70,7 +74,11 @@ export async function getAllOrders(userId, query) {
 export async function getOrder(orderId) {
   const order = await Order.findOne({
     _id: orderId,
-  }).populate([{ path: "tickets", select: ["-qrCode"] }]);
+  }).populate([
+    { path: "tickets", select: ["-qrCode"] },
+    { path: "user", select: ["firstName", "lastName"] },
+    { path: "event", select: ["title", "address"] },
+  ]);
 
   if (!order) throw ApiError.notFound("Order not found");
   return ApiSuccess.ok("Order Retrieved Successfully", { order });

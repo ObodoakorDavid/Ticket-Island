@@ -58,8 +58,6 @@ export async function getAndIncrementPromoCodeUsage(codeName) {
   const code = await Code.findOne({ codeName, isDeleted: false });
   if (!code) return;
 
-  console.log(code);
-
   code.used++;
   await code.save();
   return code;

@@ -25,7 +25,6 @@ export const generateTicketPDF = ({
   endDate,
   pdfPath,
 }) => {
-  console.log({ pdfPath });
 
   return new Promise((resolve, reject) => {
     const dir = path.dirname(pdfPath);

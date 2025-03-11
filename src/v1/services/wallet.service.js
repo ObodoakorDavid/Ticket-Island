@@ -41,6 +41,7 @@ async function creditWallet(userId, amount) {
     amount,
     status: "successful",
     adminApproval: "approved",
+    description: "Fund Wallet",
   });
   await transaction.save();
 
@@ -79,6 +80,7 @@ async function withdrawWallet(userId, amount) {
     accountNumber: wallet.bankAccountNumber,
     accountName: wallet.name,
     bankName: wallet.bankName,
+    description: "Withdrawal",
   });
   await transaction.save();
 

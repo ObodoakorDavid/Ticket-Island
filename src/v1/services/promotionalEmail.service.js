@@ -198,12 +198,6 @@ export async function deletePromotionalEmail(id, userId) {
     throw ApiError.notFound("Promotional email not found");
   }
 
-  console.log({
-    user: promotionalEmail.user.toString(),
-    userId,
-    bool: promotionalEmail.user.toString() === userId,
-  });
-
   if (promotionalEmail.user.toString() !== userId) {
     throw ApiError.forbidden("You are not authorized to delete this email");
   }
