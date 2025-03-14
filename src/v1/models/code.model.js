@@ -48,6 +48,7 @@ const codeSchema = new Schema(
       type: Date,
       required: true,
     },
+    applyToAllTickets: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
     eventTickets: [
       {

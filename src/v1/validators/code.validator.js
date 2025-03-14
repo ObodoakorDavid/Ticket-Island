@@ -44,15 +44,34 @@ export const codeValidator = [
     .isString()
     .withMessage("End time must be a string"),
 
+  // New field: applyToAllTickets
+  body("applyToAllTickets")
+    .exists()
+    .withMessage("applyToAllTickets is required")
+    .isBoolean()
+    .withMessage("applyToAllTickets must be a boolean"),
+
+  // Conditional validation for eventTickets based on applyToAllTickets
   body("eventTickets")
+    .if(body("applyToAllTickets").equals("false")) // only required if applyToAllTickets is false
     .exists({ checkFalsy: true })
-    .withMessage("Event tickets are required")
+    .withMessage("eventTickets are required when applyToAllTickets is false")
     .isArray({ min: 1 })
-    .withMessage("Event tickets must be an array")
-    .custom((arr) => arr.every((id) => /^[a-f\d]{24}$/i.test(id)))
     .withMessage(
-      "Each event ticket id in the array must be a valid MongoDB ObjectId"
-    ),
+      "eventTickets must be a non-empty array when applyToAllTickets is false"
+    )
+    .custom((arr) => arr.every((id) => /^[a-f\d]{24}$/i.test(id)))
+    .withMessage("Each event ticket ID must be a valid MongoDB ObjectId"),
+
+  // body("eventTickets")
+  //   .exists({ checkFalsy: true })
+  //   .withMessage("Event tickets are required")
+  //   .isArray({ min: 1 })
+  //   .withMessage("Event tickets must be an array")
+  //   .custom((arr) => arr.every((id) => /^[a-f\d]{24}$/i.test(id)))
+  //   .withMessage(
+  //     "Each event ticket id in the array must be a valid MongoDB ObjectId"
+  //   ),
 
   handleValidationErrors,
 ];

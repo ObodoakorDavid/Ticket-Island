@@ -18,6 +18,7 @@ import adminRoutesV1 from "./src/v1/routes/admin.routes.js";
 import promotionalEmailRoutesV1 from "./src/v1/routes/promotionalEmail.routes.js";
 import walletRoutesV1 from "./src/v1/routes/wallet.routes.js";
 import transactionRoutesV1 from "./src/v1/routes/transaction.routes.js";
+import analyticsRoutesV1 from "./src/v1/routes/analytics.routes.js";
 import waitlistRoutesV1 from "./src/v1/routes/waitlist.routes.js";
 import { isAdmin, isAuth } from "./src/middlewares/auth.js";
 
@@ -45,6 +46,7 @@ app.use("/api/v1/waitlist", waitlistRoutesV1);
 app.use("/api/v1/promotional-email", promotionalEmailRoutesV1);
 app.use("/api/v1/wallet", walletRoutesV1);
 app.use("/api/v1/transaction", transactionRoutesV1);
+app.use("/api/v1/analytics", analyticsRoutesV1);
 // app.use("/api/v1/admin", adminRoutes);
 app.use(notFound);
 app.use(errorMiddleware);

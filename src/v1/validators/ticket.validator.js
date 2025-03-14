@@ -30,5 +30,10 @@ export const ticketValidator = [
     .isBoolean({ strict: true })
     .withMessage("receivePromoEmails must be a boolean value"),
 
+  body("useCashbackBalance")
+    .optional()
+    .isBoolean({ strict: true })
+    .withMessage("useCashBackBalance must be a boolean value"),
+
   handleValidationErrors,
 ];

@@ -2,7 +2,7 @@ import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Code from "../models/code.model.js";
-import EventTicket from "../models/eventTicket..js";
+import EventTicket from "../models/eventTicket.js";
 import eventService from "./event.service.js";
 
 export async function getCodeById(codeId) {
@@ -42,6 +42,10 @@ export async function getCodeByName(codeName, eventTicketId) {
     throw ApiError.unprocessableEntity("This promo code is no longer active");
   }
 
+  if (code.applyToAllTickets) {
+    return code;
+  }
+
   // Check if the eventTicket is in the events array
   if (!code.eventTickets.includes(eventTicketId)) {
     throw ApiError.unprocessableEntity(
@@ -63,6 +67,8 @@ export async function getAndIncrementPromoCodeUsage(codeName) {
   return code;
 }
 
+////
+
 export async function getCode(codeId) {
   const code = await Code.findOne({ _id: codeId, isDeleted: false });
   if (!code) throw ApiError.notFound("Code not found");
@@ -72,9 +78,18 @@ export async function getCode(codeId) {
 }
 
 export async function createCode(codeData, userId) {
-  const { eventTickets, eventId } = codeData;
+  const { eventTickets, eventId, applyToAllTickets } = codeData;
 
   const event = await eventService.getEventById(eventId);
+
+  console.log({ applyToAllTickets });
+
+  if (applyToAllTickets) {
+    const { eventTickets, ...restCodeData } = codeData;
+    const code = new Code({ ...restCodeData, user: userId });
+    await code.save();
+    return ApiSuccess.ok("Code Created Successfully", { code });
+  }
 
   // Check that every event ticket exists
   const missingTickets = [];

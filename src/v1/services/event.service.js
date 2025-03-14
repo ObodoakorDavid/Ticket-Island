@@ -2,7 +2,7 @@ import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Event from "../models/event.model.js";
-import EventTicket from "../models/eventTicket..js";
+import EventTicket from "../models/eventTicket.js";
 
 export async function getEventById(eventId, populateOptions = []) {
   const event = await Event.findOne({
@@ -349,6 +349,29 @@ export async function deleteEventTicket(eventId, ticketId) {
   return ApiSuccess.ok("Event Ticket deleted successfully");
 }
 
+// Deduct a specific quantity from an event ticket
+export async function deductTicketQuantity(eventId, ticketId, amountToDeduct) {
+  // Find the ticket and ensure it's visible
+  const ticket = await EventTicket.findOne({
+    _id: ticketId,
+    eventId: eventId,
+    isVisible: true,
+  });
+
+  if (!ticket) throw ApiError.notFound("Event Ticket not found");
+
+  // // Check if there's enough quantity to deduct
+  // if (ticket.quantity < amountToDeduct) {
+  //   throw ApiError.badRequest("Not enough ticket quantity available");
+  // }
+
+  // Deduct the quantity
+  ticket.quantity -= amountToDeduct;
+  await ticket.save();
+
+  return ApiSuccess.ok("Ticket quantity deducted successfully", { ticket });
+}
+
 const eventService = {
   createEvent,
   getAllEvents,
@@ -366,6 +389,7 @@ const eventService = {
   deleteEventTicket,
   getEventTicketById,
   getEventById,
+  deductTicketQuantity,
   //
   getAllEventsForAdmin,
 };

@@ -72,6 +72,16 @@ const OrderSchema = new Schema(
       required: false,
       default: false,
     },
+    cashBackUsed: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    cashBackAmount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     tickets: [
       {
         type: mongoose.Schema.Types.ObjectId,

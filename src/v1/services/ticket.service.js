@@ -26,10 +26,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pdfDir = path.join(__dirname, "../../storage/");
 
 export async function buyTicket(ticketData, userId) {
-  const { ticketId, eventId, unit, promoCode, receivePromoEmails } = ticketData;
+  const {
+    ticketId,
+    eventId,
+    unit,
+    promoCode,
+    receivePromoEmails,
+    useCashbackBalance,
+  } = ticketData;
 
   const event = await eventService.getEventById(eventId);
   const eventTicket = await eventService.getEventTicketById(ticketId);
+  const user = await authService.findUserByIdOrEmail(userId);
+
   eventService.isTicketForEvent(eventId, ticketId);
 
   if (unit > eventTicket.maximumQuantity) {
@@ -96,6 +105,16 @@ export async function buyTicket(ticketData, userId) {
     priceToPay = amountAfterDiscount;
   }
 
+  const shouldUseCashBalance = priceToPay > 0;
+
+  if (useCashbackBalance && shouldUseCashBalance) {
+    // const user = await authService.findUserByIdOrEmail(userId);
+    const newPriceToPay = priceToPay - user.cashbackBalance;
+    order.cashBackUsed = true;
+    order.cashBackAmount = user.cashbackBalance;
+    priceToPay = newPriceToPay;
+  }
+
   if (priceToPay <= 0) {
     order.netPrice = 0;
     order.basePrice = 0;
@@ -134,7 +153,7 @@ export async function buyTicket(ticketData, userId) {
     order.netPrice = newPriceToPay;
   }
 
-  const user = await authService.findUserByIdOrEmail(userId);
+  // const user = await authService.findUserByIdOrEmail(userId);
 
   const { authorizationUrl } = await payWithPayStack(
     user.email,
@@ -173,18 +192,30 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
     throw ApiError.badRequest("Reference amount Mismatch");
   }
 
+  const user = await authService.findUserByIdOrEmail(order.user._id);
+
+  if (order.cashBackUsed) {
+    user.cashbackBalance = user.cashbackBalance - order.cashBackAmount;
+  }
+
   // Update the transaction with the payment status
   order.status = "success";
   order.reference = transactionRef;
   await order.save();
 
   // Give cashback
-  const user = await authService.findUserByIdOrEmail(order.user._id);
   const cashbackAmount = order.netPrice * 0.001;
   user.cashbackBalance = cashbackAmount;
 
   // Increment Promo code usage
   await getAndIncrementPromoCodeUsage(order.promoCode);
+
+  // Deduct a specific quantity from an event ticket
+  await eventService.deductTicketQuantity(
+    order.event._id,
+    order.eventTicket._id,
+    order.unit
+  );
 
   if (order.commissionBornedBy === "bearer") {
     const oraganizerCut = order.netPrice - order.commissionAmount;

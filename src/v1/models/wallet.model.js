@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { nanoid } from "nanoid";
 const { Schema } = mongoose;
 
 const walletSchema = new Schema(
@@ -34,6 +35,11 @@ const walletSchema = new Schema(
       type: Boolean,
       default: false,
       // required: [true, "Please provide a name"],
+    },
+    walletId: {
+      type: String,
+      default: () => `WALLET-${nanoid(10)}`,
+      unique: true,
     },
   },
   {

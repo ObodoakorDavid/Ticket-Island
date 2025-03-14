@@ -58,6 +58,16 @@ async function withdrawWallet(userId, amount) {
 
   const user = await authService.findUserByIdOrEmail(userId);
 
+  if (amount < 15000) {
+    throw ApiError.badRequest(
+      "Withdrawal amount should be at least 15,000 naira"
+    );
+  }
+
+  if (amount > 300000) {
+    throw ApiError.badRequest("Withdrawal amount can't be above 300,000 naira");
+  }
+
   if (user.balance < amount) {
     throw ApiError.badRequest("Insufficient balance");
   }
