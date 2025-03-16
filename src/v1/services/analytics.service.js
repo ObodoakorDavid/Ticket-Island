@@ -1,39 +1,44 @@
 import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import Event from "../models/event.model.js";
-import EventTicket from "../models/eventTicket.js";
+import EventTicket from "../models/eventTicket.model.js";
+import Ticket from "../models/ticket.model.js";
 
 // Get analytics for a specific event
-export async function getAnalytics(eventId) {
-  const event = await Event.findOne({
-    _id: eventId,
-    isDeleted: false,
-  }).populate("tickets");
+export async function getAnalytics(userId) {
+  const ticketsSoldCount = await Ticket.countDocuments({ organizer: userId });
+  const ticketsScannedCount = await Ticket.countDocuments({
+    organizer: userId,
+    hasBeenScanned: true,
+  });
 
-  if (!event) throw ApiError.notFound("Event not found");
+  const ticketsPublishedCount = await EventTicket.countDocuments({
+    organizer: userId,
+  });
 
-  // Number of subscribers
-  const totalSubscribers = event.subscribers.length;
+  const eventsHostedCount = await Event.countDocuments({
+    organizer: userId,
+    status: "approved",
+  });
 
-  // Number of tickets sold (Assuming you have a sold count or similar in ticket)
-  let totalTicketsSold = 0;
-  let totalRevenue = 0;
+  // ✅ Total revenue from tickets sold (sum of netPrice)
+  const totalRevenueAggregation = await Ticket.aggregate([
+    { $match: { organizer: userId } }, // Filter tickets for this organizer
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: "$netPrice" }, // Sum of netPrice field
+      },
+    },
+  ]);
 
-  if (event.tickets && event.tickets.length > 0) {
-    const tickets = await EventTicket.find({
-      _id: { $in: event.tickets },
-      isVisible: true,
-    });
+  const totalRevenue = totalRevenueAggregation[0]?.totalRevenue || 0;
 
-    tickets.forEach((ticket) => {
-      totalTicketsSold += ticket.sold || 0; // assuming 'sold' field in ticket
-      totalRevenue += (ticket.sold || 0) * (ticket.price || 0);
-    });
-  }
-
-  return ApiSuccess.ok("Event Analytics Retrieved Successfully", {
-    totalSubscribers,
-    totalTicketsSold,
+  return ApiSuccess.ok("Analytics Retrieved Successfully", {
+    ticketsSoldCount,
+    ticketsScannedCount,
+    ticketsPublishedCount,
+    eventsHostedCount,
     totalRevenue,
   });
 }

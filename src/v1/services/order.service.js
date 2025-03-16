@@ -69,6 +69,48 @@ export async function getAllOrders(userId, query) {
     pagination,
   });
 }
+export async function getOrganizerOrders(userId, query) {
+  const { page = 1, limit = 10, search } = query;
+
+  const filterQuery = { organizer: userId };
+  const populateOptions = [
+    {
+      path: "user",
+      select: ["firstName", "lastName"],
+    },
+    {
+      path: "event",
+      select: ["title", "address"],
+    },
+  ];
+
+  const sort = { createdAt: -1 };
+
+  if (search) {
+    const searchQuery = {
+      $or: [
+        { reference: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+      ],
+    };
+    Object.assign(filterQuery, searchQuery);
+  }
+
+  const { documents: orders, pagination } = await paginate({
+    model: Order,
+    query: filterQuery,
+    page,
+    limit,
+    sort,
+    populateOptions,
+    select: ["-qrcode"],
+  });
+
+  return ApiSuccess.ok("Orders Retrieved Successfully", {
+    orders,
+    pagination,
+  });
+}
 
 // Retrieve a specific order by ID
 export async function getOrder(orderId) {
@@ -106,6 +148,7 @@ export async function resendOrderTicketsToEmail(orderId) {
 
 const orderService = {
   getAllOrders,
+  getOrganizerOrders,
   getOrderById,
   getOrder,
   resendOrderTicketsToEmail,

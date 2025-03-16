@@ -8,6 +8,13 @@ export const getAllOrders = asyncWrapper(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const getOrganizerOrders = asyncWrapper(async (req, res) => {
+  const query = req.query;
+  const { userId } = req.user;
+  const result = await orderService.getOrganizerOrders(userId, query);
+  res.status(200).json(result);
+});
+
 export const getOrder = asyncWrapper(async (req, res) => {
   const { orderId } = req.params;
   const result = await orderService.getOrder(orderId);

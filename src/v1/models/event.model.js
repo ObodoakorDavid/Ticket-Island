@@ -4,7 +4,12 @@ const { Schema } = mongoose;
 
 const eventSchema = new Schema(
   {
-    user: {
+    // user: {
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "User",
+    //   required: true,
+    // },
+    organizer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -118,7 +123,6 @@ const eventSchema = new Schema(
       default: Date.now,
     },
     isDeleted: { type: Boolean, default: false },
-    isPublished: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

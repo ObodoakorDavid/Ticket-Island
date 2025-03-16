@@ -2,7 +2,7 @@ import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Code from "../models/code.model.js";
-import EventTicket from "../models/eventTicket.js";
+import EventTicket from "../models/eventTicket.model.js";
 import eventService from "./event.service.js";
 
 export async function getCodeById(codeId) {

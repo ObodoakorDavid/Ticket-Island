@@ -14,6 +14,11 @@ const ticketSchema = new Schema(
       ref: "User",
       required: true, // The user who purchased the ticket
     },
+    organizer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     // user: {
     //   type: mongoose.Schema.Types.ObjectId,
     //   ref: "UserProfile",

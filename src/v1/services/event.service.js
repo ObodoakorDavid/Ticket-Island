@@ -2,7 +2,8 @@ import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
 import Event from "../models/event.model.js";
-import EventTicket from "../models/eventTicket.js";
+import EventTicket from "../models/eventTicket.model.js";
+import authService from "./auth.service.js";
 
 export async function getEventById(eventId, populateOptions = []) {
   const event = await Event.findOne({
@@ -16,27 +17,23 @@ export async function getEventById(eventId, populateOptions = []) {
 
 export async function createEvent(eventData, userId) {
   const { isApproved, ...otherEventData } = eventData;
-  const event = new Event({ ...otherEventData, user: userId });
+  await authService.addOrganizerRole(userId);
+  const event = new Event({ ...otherEventData, organizer: userId });
   await event.save();
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
 
 export async function getAllEvents(query) {
-  const { page = 1, limit = 10, search, userId } = query;
+  const { page = 1, limit = 10, search } = query;
 
   const filterQuery = {
     isDeleted: false,
-    isPublished: true,
     status: "approved",
   };
 
-  if (userId) {
-    filterQuery.user = userId;
-  }
-
   const populateOptions = [
     {
-      path: "user",
+      path: "organizer",
     },
   ];
 
@@ -75,8 +72,10 @@ export async function getAllUserEvents(query, userId) {
 
   const filterQuery = {
     isDeleted: false,
-    user: userId,
+    organizer: userId,
   };
+
+  console.log(filterQuery);
 
   const statusOptions = ["pending", "approved", "rejected"];
 
@@ -86,7 +85,8 @@ export async function getAllUserEvents(query, userId) {
 
   const populateOptions = [
     {
-      path: "user",
+      path: "organizer",
+      select: ["firstName", "lastName"],
     },
   ];
 
@@ -139,7 +139,7 @@ export async function getAllEventsForAdmin(query) {
 
   const populateOptions = [
     {
-      path: "user",
+      path: "organizer",
       select: ["firstName", "lastName"],
     },
   ];
@@ -188,7 +188,7 @@ export async function getEvent(eventId) {
 
 export async function updateEvent(eventId, eventData = {}, userId) {
   const event = await Event.findOneAndUpdate(
-    { _id: eventId, user: userId, isDeleted: false },
+    { _id: eventId, organizer: userId, isDeleted: false },
     eventData,
     { new: true }
   );
@@ -253,12 +253,13 @@ export async function getEventTicketById(ticketId) {
 }
 
 // Create a new ticket for an event
-export async function createEventTicket(eventId, eventTicketData) {
+export async function createEventTicket(eventId, eventTicketData, userId) {
   const event = await Event.findById(eventId);
   if (!event || event.isDeleted) throw ApiError.notFound("Event not found");
 
   const eventTicket = await EventTicket.create({
     eventId: event._id,
+    organizer: userId,
     ...eventTicketData,
   });
 

@@ -351,13 +351,6 @@ export const eventUpdateValidator = [
     .notEmpty()
     .withMessage("Ticket Price can't be empty"),
 
-  body("isPublished")
-    .optional()
-    .isBoolean()
-    .withMessage("Published must be a boolean")
-    .notEmpty()
-    .withMessage("Published can't be empty"),
-
   handleValidationErrors,
 ];
 

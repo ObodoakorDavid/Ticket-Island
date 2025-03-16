@@ -20,6 +20,11 @@ const OrderSchema = new Schema(
       ref: "User",
       required: true,
     },
+    organizer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     unit: {
       type: Number,
       required: true,

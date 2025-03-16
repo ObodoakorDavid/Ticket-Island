@@ -63,6 +63,7 @@ export async function buyTicket(ticketData, userId) {
     commissionBornedBy: event.commissionBornedBy,
     receivePromoEmails,
     eventTicket: ticketId,
+    organizer: event.organizer._id,
   });
 
   if (eventTicket.type == "free") {
@@ -219,7 +220,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
 
   if (order.commissionBornedBy === "bearer") {
     const oraganizerCut = order.netPrice - order.commissionAmount;
-    await walletService.creditWallet(order.user._id, oraganizerCut);
+    await walletService.creditWallet(order.organizer._id, oraganizerCut);
   }
 
   if (order.receivePromoEmails) {
@@ -332,6 +333,7 @@ export async function generateNewTickets(orderId) {
       basePrice: order.basePrice,
       discountCodeUsed: order.isPromoApplied,
       netPrice: order.netPrice / numberOfTickets,
+      organizer: order.organizer._id,
     });
 
     if (order.isPromoApplied) {

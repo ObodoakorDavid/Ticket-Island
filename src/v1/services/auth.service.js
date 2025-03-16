@@ -30,9 +30,14 @@ export async function findUserByIdOrEmail(identifier) {
 }
 
 export async function register(userData = {}) {
-  const { password, joinMailingList } = userData;
-  const hashedPassword = await hashPassword(password);
+  const { email, password, joinMailingList } = userData;
 
+  const existingUser = await findUserByEmail(email);
+  if (existingUser) {
+    throw ApiError.badRequest("User with this email already exists");
+  }
+
+  const hashedPassword = await hashPassword(password);
   const user = await User.create({ ...userData, password: hashedPassword });
 
   // Add user to mailing list if requested
@@ -192,6 +197,23 @@ export async function addUserToMailingList(userData = {}) {
   return ApiSuccess.ok("User opted not to join the mailing list");
 }
 
+export async function addOrganizerRole(userId) {
+  const user = await findUserByIdOrEmail(userId);
+
+  if (user.roles.includes("organizer")) {
+    return ApiSuccess.ok("User is already an organizer", {
+      user,
+    });
+  }
+
+  user.roles.push("organizer");
+  await user.save();
+
+  return ApiSuccess.ok("User has been assigned as an organizer", {
+    user,
+  });
+}
+
 const authService = {
   findUserByEmail,
   findUserByIdOrEmail,
@@ -203,6 +225,7 @@ const authService = {
   resetPassword,
   verifyEmailToken,
   addUserToMailingList,
+  addOrganizerRole,
 };
 
 export default authService;
