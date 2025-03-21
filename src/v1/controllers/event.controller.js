@@ -45,7 +45,12 @@ export const deleteEvent = asyncWrapper(async (req, res) => {
 export const createEventTicket = asyncWrapper(async (req, res) => {
   const ticketData = req.body;
   const { eventId } = req.params;
-  const result = await eventService.createEventTicket(eventId, ticketData);
+  const { userId } = req.user;
+  const result = await eventService.createEventTicket(
+    eventId,
+    ticketData,
+    userId
+  );
   res.status(201).json(result);
 });
 

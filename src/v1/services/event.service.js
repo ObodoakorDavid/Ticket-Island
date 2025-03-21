@@ -257,6 +257,8 @@ export async function createEventTicket(eventId, eventTicketData, userId) {
   const event = await Event.findById(eventId);
   if (!event || event.isDeleted) throw ApiError.notFound("Event not found");
 
+  console.log({ userId });
+
   const eventTicket = await EventTicket.create({
     eventId: event._id,
     organizer: userId,
