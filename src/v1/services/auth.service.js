@@ -32,7 +32,7 @@ export async function findUserByIdOrEmail(identifier) {
 export async function register(userData = {}) {
   const { email, password, joinMailingList } = userData;
 
-  const existingUser = await findUserByEmail(email);
+  const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw ApiError.badRequest("User with this email already exists");
   }
