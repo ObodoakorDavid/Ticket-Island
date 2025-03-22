@@ -211,7 +211,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
   // Increment Promo code usage
   await getAndIncrementPromoCodeUsage(order.promoCode);
 
-  // Deduct a specific quantity from an event ticket
+  // Deduct a specific quantity from an event ticket and increment times bought
   await eventService.deductTicketQuantity(
     order.event._id,
     order.eventTicket._id,
@@ -293,7 +293,22 @@ export async function updateTicket(ticketId, data, userId) {
 
   if (!ticket) throw ApiError.notFound("Ticket not found");
 
-  return ApiSuccess.ok("Ticket Updated Successfully", {
+  return ApiSuccess.ok("Ticket updated successfully", {
+    ticket,
+  });
+}
+
+export async function scanTicket(ticketId) {
+  const ticket = await Ticket.findById(ticketId);
+
+  if (ticket.hasBeenScanned) {
+    throw ApiError.badRequest("This ticket has been scanned");
+  }
+
+  ticket.hasBeenScanned = true;
+  await ticket.save();
+
+  return ApiSuccess.ok("Ticket scanned successfully", {
     ticket,
   });
 }
@@ -417,6 +432,7 @@ const ticketService = {
   getAllTickets,
   getTicket,
   updateTicket,
+  scanTicket,
   deleteTicket,
   handlePaymentSuccess,
   generateNewTickets,

@@ -24,7 +24,7 @@ export async function createEvent(eventData, userId) {
 }
 
 export async function getAllEvents(query) {
-  const { page = 1, limit = 10, search } = query;
+  const { page = 1, limit = 10, search, sortBy } = query;
 
   const filterQuery = {
     isDeleted: false,
@@ -37,7 +37,14 @@ export async function getAllEvents(query) {
     },
   ];
 
-  const sort = { createdAt: -1 };
+  let sort = { createdAt: -1 };
+
+  if (sortBy?.toLowerCase() === "upcoming") {
+    console.log("hhhh");
+
+    filterQuery.startTime = { $gte: new Date() };
+    sort = { startTime: 1 };
+  }
 
   if (search) {
     const searchQuery = {
@@ -370,6 +377,8 @@ export async function deductTicketQuantity(eventId, ticketId, amountToDeduct) {
 
   // Deduct the quantity
   ticket.quantity -= amountToDeduct;
+  // Increment the amount of times it has been bought
+  ticket.timesBought += amountToDeduct;
   await ticket.save();
 
   return ApiSuccess.ok("Ticket quantity deducted successfully", { ticket });

@@ -58,3 +58,24 @@ export const userValidator = [
 
   handleValidationErrors,
 ];
+
+export const userRolesValidator = [
+  body("roles")
+    .optional()
+    .isArray()
+    .withMessage("Roles must be an array of strings")
+    .custom((value) => {
+      const validRoles = ["activator"];
+      if (value.length > 1) {
+        throw ApiError.unprocessableEntity("User can only have one role");
+      }
+      value.forEach((role) => {
+        if (!validRoles.includes(role)) {
+          throw ApiError.unprocessableEntity("Invalid Role");
+        }
+      });
+      return true;
+    }),
+
+  handleValidationErrors,
+];

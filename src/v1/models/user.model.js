@@ -47,7 +47,7 @@ const UserSchema = new Schema(
     },
     roles: {
       type: [String],
-      enum: ["user", "admin", "organizer"],
+      enum: ["user", "admin", "organizer", "activator"],
       default: ["user"],
     },
     balance: {
@@ -59,6 +59,11 @@ const UserSchema = new Schema(
       type: Number,
       default: 0, // Default cashback balance is 0
       min: [0, "Cashback cannot be negative"],
+    },
+    ticketScanned: {
+      type: Number,
+      default: 0, // Default cashback balance is 0
+      min: [0, "Ticket scanned cannot be negative"],
     },
   },
   {

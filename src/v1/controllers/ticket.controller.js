@@ -40,6 +40,12 @@ export const updateTicket = asyncWrapper(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const scanTicket = asyncWrapper(async (req, res) => {
+  const { ticketId } = req.params;
+  const result = await ticketService.scanTicket(ticketId);
+  res.status(200).json(result);
+});
+
 export const deleteTicket = asyncWrapper(async (req, res) => {
   const { ticketId } = req.params;
   const { userId } = req.user;

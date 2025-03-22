@@ -7,9 +7,10 @@ import {
   deleteTicket,
   verifyTicketPayment,
   buyTicket,
+  scanTicket,
 } from "../controllers/ticket.controller.js";
 import { ticketValidator } from "../validators/ticket.validator.js";
-import { isAuth } from "../../middlewares/auth.js";
+import { isActivator, isAuth } from "../../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -26,6 +27,11 @@ router
   .get(getTicket)
   .put(isAuth, updateTicket)
   .delete(isAuth, deleteTicket)
+  .all(methodNotAllowed);
+
+router
+  .route("/:ticketId/scan")
+  .put(isAuth, isActivator, scanTicket)
   .all(methodNotAllowed);
 
 export default router;

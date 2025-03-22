@@ -78,6 +78,11 @@ const eventTicketSchema = new Schema(
     description: {
       type: String,
     },
+    timesBought: {
+      type: Number,
+      default: 0,
+      min: [0, "Times bought cannot be negative"],
+    },
   },
   {
     timestamps: true,

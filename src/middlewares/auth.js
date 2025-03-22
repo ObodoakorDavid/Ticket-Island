@@ -15,11 +15,20 @@ const isAuth = asyncWrapper(async (req, res, next) => {
 
 const isAdmin = asyncWrapper(async (req, res, next) => {
   const user = req.user;
-  
+
   if (!user.roles.includes("admin")) {
     throw ApiError.unauthorized("Unauthorized, Admins Only");
   }
   next();
 });
 
-export { isAuth, isAdmin };
+const isActivator = asyncWrapper(async (req, res, next) => {
+  const user = req.user;
+
+  if (!user.roles.includes("activator")) {
+    throw ApiError.unauthorized("Unauthorized, Activators Only");
+  }
+  next();
+});
+
+export { isAuth, isAdmin, isActivator };
