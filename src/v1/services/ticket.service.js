@@ -301,6 +301,10 @@ export async function updateTicket(ticketId, data, userId) {
 export async function scanTicket(ticketId) {
   const ticket = await Ticket.findById(ticketId);
 
+  if (!ticket) {
+    throw ApiError.badRequest("Ticket not found");
+  }
+
   if (ticket.hasBeenScanned) {
     throw ApiError.badRequest("This ticket has been scanned");
   }
