@@ -23,13 +23,8 @@ async function validatePassword(incomingPassword, existingPassword) {
   }
 }
 
-// Checks if an id is a valid mongoose Id
-function validateMongoId(id) {
-  const isValid = mongoose.isValidObjectId(id);
-  if (!isValid) {
-    throw ApiError.badRequest("Invalid Id");
-  }
+function isValidMongoId(id) {
+  return mongoose.isValidObjectId(id);
 }
 
-
-export { hashPassword, validatePassword, validateMongoId };
+export { hashPassword, validatePassword, isValidMongoId };

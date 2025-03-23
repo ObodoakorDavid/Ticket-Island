@@ -1,27 +1,59 @@
 import ApiError from "../../utils/apiError.js";
 import ApiSuccess from "../../utils/apiSuccess.js";
 import { paginate } from "../../utils/paginate.js";
+import { isValidMongoId } from "../../utils/validationUtils.js";
 import Event from "../models/event.model.js";
 import EventTicket from "../models/eventTicket.model.js";
 import authService from "./auth.service.js";
+import uploadService from "./upload.service.js";
 
-export async function getEventById(eventId, populateOptions = []) {
-  const event = await Event.findOne({
-    _id: eventId,
-    isDeleted: false,
-  }).populate(populateOptions);
+export async function getEventById(eventIdOrSlug, populateOptions = []) {
+  const query = isValidMongoId(eventIdOrSlug)
+    ? { _id: eventIdOrSlug, isDeleted: false }
+    : { slug: eventIdOrSlug, isDeleted: false };
+
+  const event = await Event.findOne(query).populate(populateOptions);
 
   if (!event) throw ApiError.notFound("Event not found");
   return event;
 }
 
-export async function createEvent(eventData, userId) {
+export async function createEvent(eventData, userId, photo) {
   const { isApproved, ...otherEventData } = eventData;
+
+  // Upload photo to Cloudinary if provided
+  let photoUrl = "";
+  if (photo) {
+    try {
+      photoUrl = await uploadService.uploadToCloudinary(photo.tempFilePath);
+      console.log({ photoUrl });
+    } catch (error) {
+      throw new ApiError.internalServerError(
+        500,
+        "Failed to upload event photo"
+      );
+    }
+  }
+
   await authService.addOrganizerRole(userId);
-  const event = new Event({ ...otherEventData, organizer: userId });
+
+  const event = new Event({
+    ...otherEventData,
+    organizer: userId,
+    photo: photoUrl || "", // Store photo URL in event document
+  });
+
   await event.save();
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
+
+// export async function createEvent(eventData, userId, photo) {
+//   const { isApproved, ...otherEventData } = eventData;
+//   await authService.addOrganizerRole(userId);
+//   const event = new Event({ ...otherEventData, organizer: userId });
+//   await event.save();
+//   return ApiSuccess.ok("Event Created Successfully", { event });
+// }
 
 export async function getAllEvents(query) {
   const { page = 1, limit = 10, search, sortBy } = query;
@@ -182,12 +214,10 @@ export async function getAllEventsForAdmin(query) {
 }
 
 export async function getEvent(eventId) {
-  const event = await Event.findOne({
-    _id: eventId,
-    isDeleted: false,
-  }).populate("tickets");
+  const populateOptions = [{ path: "tickets" }];
 
-  if (!event) throw ApiError.notFound("Event not found");
+  const event = await getEventById(eventId, populateOptions);
+
   return ApiSuccess.ok("Event Retrieved Successfully", {
     event,
   });

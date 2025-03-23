@@ -1,14 +1,10 @@
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const { Schema } = mongoose;
 
 const eventSchema = new Schema(
   {
-    // user: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "User",
-    //   required: true,
-    // },
     organizer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -21,6 +17,11 @@ const eventSchema = new Schema(
     title: {
       type: String,
       required: true,
+    },
+    slug: {
+      type: String,
+      unique: true,
+      index: true,
     },
     summary: {
       type: String,
@@ -95,13 +96,6 @@ const eventSchema = new Schema(
       enum: ["free", "paid"],
       required: true,
     },
-    // ticketPrice: {
-    //   type: Number,
-    //   required: function () {
-    //     return this.ticketType === "paid";
-    //   },
-    //   min: [0, "Price cannot be negative"],
-    // },
     agendaTitle: {
       type: String,
     },
@@ -170,6 +164,15 @@ const eventSchema = new Schema(
     timestamps: true,
   }
 );
+
+eventSchema.post("save", async function () {
+  if (!this.slug) {
+    this.slug = `${slugify(this.title, { lower: true, strict: true })}-${
+      this._id
+    }`;
+    await this.save();
+  }
+});
 
 const Event = mongoose.model("Event", eventSchema);
 

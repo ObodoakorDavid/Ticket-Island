@@ -277,7 +277,20 @@ export async function getAllTickets(query) {
 }
 
 export async function getTicket(ticketId) {
-  const ticket = await Ticket.findOne({ _id: ticketId, isDeleted: false });
+  const ticket = await Ticket.findOne({
+    _id: ticketId,
+    isDeleted: false,
+  }).populate([
+    {
+      path: "user",
+      select: ["firstName", "lastName"],
+    },
+    {
+      path: "event",
+      select: ["title", "title", "summary", "eventType"],
+    },
+  ]);
+
   if (!ticket) throw ApiError.notFound("Ticket not found");
   return ApiSuccess.ok("Ticket Retrieved Successfully", {
     ticket,

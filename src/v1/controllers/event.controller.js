@@ -4,7 +4,11 @@ import eventService from "../services/event.service.js";
 export const createEvent = asyncWrapper(async (req, res) => {
   const { isApproved, ...eventData } = req.body;
   const { userId } = req.user;
-  const result = await eventService.createEvent(eventData, userId);
+  const { photo } = req.files;
+
+  console.log({ photo });
+
+  const result = await eventService.createEvent(eventData, userId, photo);
   res.status(201).json(result);
 });
 

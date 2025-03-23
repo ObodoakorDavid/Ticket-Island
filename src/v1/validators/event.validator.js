@@ -1,15 +1,32 @@
 import { body } from "express-validator";
 import { handleValidationErrors } from "../../middlewares/error.js";
+import ApiError from "../../utils/apiError.js";
+import asyncWrapper from "../../middlewares/asyncWrapper.js";
 
-// Event Validator
+const validateImages = asyncWrapper((req, res, next) => {
+  if (!req.files) {
+    throw ApiError.unprocessableEntity("Please upload a photo of the event");
+  }
+
+  const { photo } = req.files;
+
+  // Check if images are present in req.files
+  if (!photo) {
+    throw ApiError.unprocessableEntity("Photo should have a key of 'photo' ");
+  }
+
+  if (!photo.mimetype.startsWith("image")) {
+    throw ApiError.unprocessableEntity("All images should be an image file");
+  }
+
+  next(); // Proceed to the next middleware
+});
+
 export const eventValidator = [
-  body("photo")
-    .exists()
-    .withMessage("Photo is required")
-    .notEmpty()
-    .withMessage("photo can't be empty")
-    .isString()
-    .withMessage("Photo must be a string"),
+  (req, res, next) => {
+    console.log(req.body);
+    next();
+  },
 
   body("title")
     .exists()
@@ -89,11 +106,11 @@ export const eventValidator = [
 
   body("category")
     .exists()
-    .withMessage("category is required")
+    .withMessage("Category is required")
     .notEmpty()
     .withMessage("Category can't be empty")
     .isString()
-    .withMessage("category must be a string"),
+    .withMessage("Category must be a string"),
 
   body("ticketType")
     .exists()
@@ -101,27 +118,39 @@ export const eventValidator = [
     .isIn(["free", "paid"])
     .withMessage("Ticket Type must be either 'free' or 'paid'"),
 
-  body("direction").isArray().withMessage("Direction must be an array"),
+  body("direction")
+    .optional()
+    .isArray()
+    .withMessage("Direction must be an array if provided"),
+
   body("direction.*.name")
+    .optional()
     .notEmpty()
     .withMessage("Direction name is required")
     .isString()
     .withMessage("Direction name must be a string"),
 
   body("direction.*.description")
+    .optional()
     .notEmpty()
     .withMessage("Direction description is required")
     .isString()
     .withMessage("Direction description must be a string"),
 
-  body("QandA").isArray().withMessage("QandA must be an array"),
+  body("QandA")
+    .optional()
+    .isArray()
+    .withMessage("QandA must be an array if provided"),
+
   body("QandA.*.question")
+    .optional()
     .notEmpty()
     .withMessage("QandA question is required")
     .isString()
-    .withMessage("QandA answe must be a string"),
+    .withMessage("QandA question must be a string"),
 
   body("QandA.*.answer")
+    .optional()
     .notEmpty()
     .withMessage("QandA answer is required")
     .isString()
@@ -175,7 +204,191 @@ export const eventValidator = [
     .withMessage("Ticket Price must be a positive number if provided"),
 
   handleValidationErrors,
+
+  validateImages,
 ];
+
+// Event Validator
+// export const eventValidator = [
+//   (req, res, next) => {
+//     console.log(req.body);
+//     next();
+//   },
+//   // body("photo")
+//   //   .exists()
+//   //   .withMessage("Photo is required")
+//   //   .notEmpty()
+//   //   .withMessage("photo can't be empty")
+//   //   .isString()
+//   //   .withMessage("Photo must be a string"),
+
+//   body("title")
+//     .exists()
+//     .withMessage("Title is required")
+//     .notEmpty()
+//     .withMessage("Title can't be empty")
+//     .isString()
+//     .withMessage("Title must be a string"),
+
+//   body("summary")
+//     .exists()
+//     .withMessage("Summary is required")
+//     .notEmpty()
+//     .withMessage("Summary can't be empty")
+//     .isString()
+//     .withMessage("Summary must be a string"),
+
+//   body("eventType")
+//     .exists()
+//     .withMessage("Event Type is required")
+//     .isIn(["single", "recurring"])
+//     .withMessage("Event Type must be either 'single' or 'recurring'"),
+
+//   body("date")
+//     .exists()
+//     .withMessage("Date is required")
+//     .isISO8601()
+//     .withMessage("Date must be a valid date in ISO 8601 format"),
+
+//   body("startTime")
+//     .exists()
+//     .withMessage("Start time is required")
+//     .notEmpty()
+//     .withMessage("Start time can't be empty")
+//     .isString()
+//     .withMessage("Start time must be a string"),
+
+//   body("endTime")
+//     .exists()
+//     .withMessage("End time is required")
+//     .notEmpty()
+//     .withMessage("End time can't be empty")
+//     .isString()
+//     .withMessage("End time must be a string"),
+
+//   body("address")
+//     .exists()
+//     .withMessage("Address is required")
+//     .notEmpty()
+//     .withMessage("Address can't be empty")
+//     .isString()
+//     .withMessage("Address must be a string"),
+
+//   body("state")
+//     .exists()
+//     .withMessage("State is required")
+//     .notEmpty()
+//     .withMessage("State can't be empty")
+//     .isString()
+//     .withMessage("State must be a string"),
+
+//   body("postalCode")
+//     .exists()
+//     .withMessage("Postal code is required")
+//     .notEmpty()
+//     .withMessage("Postal code can't be empty")
+//     .isString()
+//     .withMessage("Postal code must be a string"),
+
+//   body("country")
+//     .exists()
+//     .withMessage("Country is required")
+//     .notEmpty()
+//     .withMessage("Country can't be empty")
+//     .isString()
+//     .withMessage("Country must be a string"),
+
+//   body("category")
+//     .exists()
+//     .withMessage("category is required")
+//     .notEmpty()
+//     .withMessage("Category can't be empty")
+//     .isString()
+//     .withMessage("category must be a string"),
+
+//   body("ticketType")
+//     .exists()
+//     .withMessage("Ticket Type is required")
+//     .isIn(["free", "paid"])
+//     .withMessage("Ticket Type must be either 'free' or 'paid'"),
+
+//   body("direction").isArray().withMessage("Direction must be an array"),
+//   body("direction.*.name")
+//     .notEmpty()
+//     .withMessage("Direction name is required")
+//     .isString()
+//     .withMessage("Direction name must be a string"),
+
+//   body("direction.*.description")
+//     .notEmpty()
+//     .withMessage("Direction description is required")
+//     .isString()
+//     .withMessage("Direction description must be a string"),
+
+//   body("QandA").isArray().withMessage("QandA must be an array"),
+//   body("QandA.*.question")
+//     .notEmpty()
+//     .withMessage("QandA question is required")
+//     .isString()
+//     .withMessage("QandA answe must be a string"),
+
+//   body("QandA.*.answer")
+//     .notEmpty()
+//     .withMessage("QandA answer is required")
+//     .isString()
+//     .withMessage("QandA answer must be a string"),
+
+//   body("pricingPlan")
+//     .exists()
+//     .withMessage("Pricing Plan is required")
+//     .isIn(["bronze", "silver", "gold"])
+//     .withMessage("Pricing Plan must be one of 'bronze', 'silver', or 'gold'"),
+
+//   body("commissionBornedBy")
+//     .exists()
+//     .withMessage("Commission Borned By is required")
+//     .isIn(["bearer", "customer"])
+//     .withMessage("Commission Borned By must be either 'bearer' or 'customer'"),
+
+//   body("locationURL")
+//     .optional()
+//     .isURL()
+//     .withMessage("Location URL must be a valid URL if provided"),
+
+//   body("additionalInformation")
+//     .optional()
+//     .isString()
+//     .withMessage("Additional Information must be a string if provided"),
+
+//   body("agendaTitle")
+//     .optional()
+//     .isString()
+//     .withMessage("Agenda Title must be a string if provided"),
+
+//   body("agendaStartTime")
+//     .optional()
+//     .isString()
+//     .withMessage("Agenda Start Time must be a string if provided"),
+
+//   body("agendaEndTime")
+//     .optional()
+//     .isString()
+//     .withMessage("Agenda End Time must be a string if provided"),
+
+//   body("agendaHostName")
+//     .optional()
+//     .isString()
+//     .withMessage("Agenda Host Name must be a string if provided"),
+
+//   body("ticketPrice")
+//     .optional()
+//     .isFloat({ min: 0 })
+//     .withMessage("Ticket Price must be a positive number if provided"),
+
+//   handleValidationErrors,
+
+//   validateImages,
+// ];
 
 export const eventUpdateValidator = [
   body("photo")
