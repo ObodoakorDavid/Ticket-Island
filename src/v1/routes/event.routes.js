@@ -18,7 +18,6 @@ import {
   eventValidator,
   eventTicketValidator,
   eventTicketUpdateValidator,
-  eventEmailValidator,
 } from "../validators/event.validator.js";
 import { isAuth } from "../../middlewares/auth.js";
 
@@ -53,13 +52,6 @@ router
   .get(getEventTicket) // Get a specific ticket for the event
   .patch(isAuth, eventTicketUpdateValidator, updateEventTicket) // Update a ticket
   .delete(isAuth, deleteEventTicket) // Mark ticket as not visible (soft delete)
-  .all(methodNotAllowed);
-
-//Promotional Email
-router
-  .route("/:eventId/email")
-  .post(isAuth, eventEmailValidator, createEventTicket) // Create a ticket for event
-  .get(getEventTickets) // Get all visible tickets for the event
   .all(methodNotAllowed);
 
 export default router;

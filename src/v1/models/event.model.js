@@ -119,7 +119,7 @@ const eventSchema = new Schema(
     isDeleted: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "published", "approved", "rejected"],
       default: "pending",
     },
     rejectionReason: {

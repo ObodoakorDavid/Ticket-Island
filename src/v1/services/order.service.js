@@ -40,6 +40,10 @@ export async function getAllOrders(userId, query) {
       path: "event",
       select: ["title", "address"],
     },
+    {
+      path: "eventTicket",
+      select: ["title", "address"],
+    },
   ];
 
   const sort = { createdAt: -1 };
@@ -69,6 +73,7 @@ export async function getAllOrders(userId, query) {
     pagination,
   });
 }
+
 export async function getOrganizerOrders(userId, query) {
   const { page = 1, limit = 10, search } = query;
 

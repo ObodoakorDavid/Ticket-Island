@@ -68,7 +68,6 @@ export async function getAndIncrementPromoCodeUsage(codeName) {
 }
 
 ////
-
 export async function getCode(codeId) {
   const code = await Code.findOne({ _id: codeId, isDeleted: false });
   if (!code) throw ApiError.notFound("Code not found");
@@ -82,12 +81,11 @@ export async function createCode(codeData, userId) {
 
   const event = await eventService.getEventById(eventId);
 
-  console.log({ applyToAllTickets });
-
   if (applyToAllTickets) {
     const { eventTickets, ...restCodeData } = codeData;
     const code = new Code({ ...restCodeData, user: userId });
     await code.save();
+    await eventService.addCodeToEvent(eventId, code._id);
     return ApiSuccess.ok("Code Created Successfully", { code });
   }
 
@@ -109,6 +107,7 @@ export async function createCode(codeData, userId) {
 
   const code = new Code({ ...codeData, user: userId });
   await code.save();
+  await eventService.addCodeToEvent(eventId, code._id);
   return ApiSuccess.ok("Code Created Successfully", { code });
 }
 

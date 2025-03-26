@@ -207,6 +207,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
   // Give cashback
   const cashbackAmount = order.netPrice * 0.001;
   user.cashbackBalance = cashbackAmount;
+  await user.save();
 
   // Increment Promo code usage
   await getAndIncrementPromoCodeUsage(order.promoCode);
@@ -277,10 +278,7 @@ export async function getAllTickets(query) {
 }
 
 export async function getTicket(ticketId) {
-  const ticket = await Ticket.findOne({
-    _id: ticketId,
-    isDeleted: false,
-  }).populate([
+  const populateOptions = [
     {
       path: "user",
       select: ["firstName", "lastName"],
@@ -289,7 +287,15 @@ export async function getTicket(ticketId) {
       path: "event",
       select: ["title", "title", "summary", "eventType"],
     },
-  ]);
+    {
+      path: "eventTicket",
+      select: ["type", "name", "summary", "price"],
+    },
+  ];
+  const ticket = await Ticket.findOne({
+    _id: ticketId,
+    isDeleted: false,
+  }).populate(populateOptions);
 
   if (!ticket) throw ApiError.notFound("Ticket not found");
   return ApiSuccess.ok("Ticket Retrieved Successfully", {
@@ -354,6 +360,7 @@ export async function generateNewTickets(orderId) {
   const startDate = formatDate(order.event.startTime);
   const endDate = formatDate(order.event.endTime);
   const ticketName = order.eventTicket.name;
+  const eventTicket = order.eventTicket;
 
   const ticketPaths = [];
   const createdTickets = [];
@@ -366,6 +373,7 @@ export async function generateNewTickets(orderId) {
       discountCodeUsed: order.isPromoApplied,
       netPrice: order.netPrice / numberOfTickets,
       organizer: order.organizer._id,
+      eventTicket: eventTicket._id,
     });
 
     if (order.isPromoApplied) {

@@ -138,7 +138,7 @@ export async function verifyOTP({ email, otp }) {
 
 export async function forgotPassword({ email }) {
   const user = await findUserByIdOrEmail(email);
-  const emailInfo = await sendOTPEmail(user.email, user.firstName);
+  const emailInfo = await emailUtils.sendOTPEmail(user.email, user.firstName);
   return ApiSuccess.ok(`OTP has been sent to ${emailInfo.envelope.to}`);
 }
 
@@ -159,7 +159,8 @@ export const verifyEmailToken = async (token) => {
     throw ApiError.badRequest("Token is required");
   }
   const { userId } = verifyToken(token);
-  const user = await User.findOne({ userId });
+
+  const user = await User.findById(userId);
   if (!user) {
     throw ApiError.notFound("User not found");
   }

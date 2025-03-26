@@ -9,6 +9,11 @@ const ticketSchema = new Schema(
       ref: "Event",
       required: true, // The event this ticket belongs to
     },
+    eventTicket: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "EventTicket",
+      required: true,
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

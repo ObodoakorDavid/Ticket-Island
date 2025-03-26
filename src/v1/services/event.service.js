@@ -47,14 +47,6 @@ export async function createEvent(eventData, userId, photo) {
   return ApiSuccess.ok("Event Created Successfully", { event });
 }
 
-// export async function createEvent(eventData, userId, photo) {
-//   const { isApproved, ...otherEventData } = eventData;
-//   await authService.addOrganizerRole(userId);
-//   const event = new Event({ ...otherEventData, organizer: userId });
-//   await event.save();
-//   return ApiSuccess.ok("Event Created Successfully", { event });
-// }
-
 export async function getAllEvents(query) {
   const { page = 1, limit = 10, search, sortBy } = query;
 
@@ -170,7 +162,7 @@ export async function getAllEventsForAdmin(query) {
     filterQuery.user = userId;
   }
 
-  const statusOptions = ["pending", "approved", "rejected"];
+  const statusOptions = ["pending", "published", "approved", "rejected"];
 
   if (statusOptions.includes(status)) {
     filterQuery.status = status;
@@ -214,7 +206,13 @@ export async function getAllEventsForAdmin(query) {
 }
 
 export async function getEvent(eventId) {
-  const populateOptions = [{ path: "tickets" }];
+  const populateOptions = [
+    { path: "tickets" },
+    {
+      path: "availableCodes",
+      select: ["codeName", "codeType", "discount", "codeStatus"],
+    },
+  ];
 
   const event = await getEventById(eventId, populateOptions);
 
@@ -270,6 +268,20 @@ export async function isTicketForEvent(eventId, ticketId) {
 
   if (!event) {
     throw ApiError.notFound("Ticket does not belong to this event");
+  }
+
+  return event;
+}
+
+export async function addCodeToEvent(eventId, codeId) {
+  const event = await Event.findOneAndUpdate(
+    { _id: eventId, isDeleted: false },
+    { $addToSet: { availableCodes: codeId } },
+    { new: true }
+  );
+
+  if (!event) {
+    throw ApiError.notFound("Event not found");
   }
 
   return event;
@@ -432,6 +444,7 @@ const eventService = {
   getEventTicketById,
   getEventById,
   deductTicketQuantity,
+  addCodeToEvent,
   //
   getAllEventsForAdmin,
 };
