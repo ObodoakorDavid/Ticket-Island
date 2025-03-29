@@ -1,9 +1,11 @@
-import ApiError from "../../utils/apiError.js";
-import ApiSuccess from "../../utils/apiSuccess.js";
-import emailUtils from "../../utils/emailUtils.js";
-import { paginate } from "../../utils/paginate.js";
-import PromotionalEmail from "../models/promotionalEmail.model.js";
-import eventService from "./event.service.js";
+import ApiSuccess from "../../../utils/apiSuccess.js";
+import ApiError from "../../../utils/apiError.js";
+import emailUtils from "../../../utils/emailUtils.js";
+import { paginate } from "../../../utils/paginate.js";
+import eventService from "../../services/event.service.js";
+import PromotionalEmail from "./promotionalEmail.model.js";
+import uploadService from "../../services/upload.service.js";
+import organizerService from "../organizer/organizer.service.js";
 
 export async function getAllPromotionalEmails(query) {
   const { page = 1, limit = 10, search, status, userId } = query;
@@ -11,7 +13,7 @@ export async function getAllPromotionalEmails(query) {
   const filterQuery = { isDeleted: false };
 
   if (userId) {
-    filterQuery.user = userId;
+    filterQuery.organizer = userId;
   }
 
   const statusOptions = ["pending", "approved", "rejected"];
@@ -74,31 +76,51 @@ export async function getUserPromotionalEmails(userId, query) {
   });
 }
 
-export async function sendPromotionalEmail(emailData = {}, userId) {
-  const { subject, message, eventId } = emailData;
+export async function sendPromotionalEmail(
+  emailData = {},
+  userId,
+  headerImage
+) {
+  const { from, replyTo, subject, body, eventId } = emailData;
 
   const event = await eventService.getEventById(eventId);
 
-  console.log({
-    user: event.user,
-    userId,
-    bool: event.user === userId,
-  });
-
-  if (event.user.toString() !== userId) {
+  if (event.organizer._id.toString() !== userId) {
     throw ApiError.badRequest(
       "You can't send promotional emails for this event"
     );
   }
 
-  const promotionalEmail = new PromotionalEmail({
+  const updateFields = {
     event: event._id,
     user: userId,
     subject,
-    message,
+    from,
+    replyTo,
+    body,
     status: "pending",
-  });
+  };
 
+  let photoUrl = null;
+
+  // Upload photo to Cloudinary if provided
+  if (headerImage) {
+    try {
+      photoUrl = await uploadService.uploadToCloudinary(
+        headerImage.tempFilePath
+      );
+      console.log({ photoUrl });
+    } catch (error) {
+      throw ApiError.internalServerError("Failed to upload header image");
+    }
+  }
+
+  // Attach header image if uploaded
+  if (photoUrl) updateFields.headerImage = photoUrl; // Only add header image if uploaded
+
+  console.log({ updateFields });
+
+  const promotionalEmail = new PromotionalEmail(updateFields);
   await promotionalEmail.save();
 
   return ApiSuccess.ok("Promotional email request submitted for approval.", {
@@ -126,9 +148,9 @@ export async function updatePromotionalEmail(
     throw ApiError.notFound("Promotional email not found");
   }
 
-  if (promotionalEmail.status === "approved") {
-    throw ApiError.forbidden("Promotional email has already been approved");
-  }
+  // if (promotionalEmail.status === "approved") {
+  //   throw ApiError.forbidden("Promotional email has already been approved");
+  // }
 
   promotionalEmail.status = status;
   promotionalEmail.updatedBy = userId;
@@ -138,9 +160,13 @@ export async function updatePromotionalEmail(
 
   const emailObject = {
     to: [],
+    from: promotionalEmail.from,
+    replyTo: promotionalEmail.replyTo,
     subject: promotionalEmail.subject,
-    message: promotionalEmail.message,
+    title: promotionalEmail.event.title,
+    body: promotionalEmail.body,
     eventName: promotionalEmail.event.title,
+    headerImage: promotionalEmail.headerImage,
   };
 
   if (status === "approved") {
@@ -151,6 +177,22 @@ export async function updatePromotionalEmail(
     emailObject.to = event.subscribers
       .map((subscriber) => subscriber.email)
       .filter(Boolean);
+
+    const organizer = await organizerService.getOrganizerByUserId(
+      promotionalEmail.user
+    );
+
+    emailObject.organizerName = organizer.name;
+    emailObject.logo = organizer.logo;
+    emailObject.address = organizer.address1;
+    emailObject.city = organizer.city;
+    emailObject.state = organizer.state;
+    emailObject.country = organizer.country;
+    emailObject.twitterLink = organizer.twitterLink;
+    emailObject.instagramLink = organizer.instagramLink;
+    emailObject.facebookLink = organizer.facebookLink;
+
+    console.log({ emailObject });
 
     try {
       const emailInfo = await emailUtils.sendPromotionalEmail(emailObject);

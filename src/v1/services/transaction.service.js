@@ -4,7 +4,7 @@ import { paginate } from "../../utils/paginate.js";
 import { initiatePaystackWithdrawal } from "../../utils/payment.js";
 import Transaction from "../models/transaction.model.js";
 import authService from "./auth.service.js";
-import walletService from "./wallet.service.js";
+import walletService from "../modules/wallet/wallet.service.js";
 
 // Function to create a transaction
 async function createTransaction(data) {

@@ -1,8 +1,8 @@
-import User from "../models/user.model.js";
-import ApiSuccess from "../../utils/apiSuccess.js";
-import ApiError from "../../utils/apiError.js";
-import { paginate } from "../../utils/paginate.js";
-import authService from "./auth.service.js";
+import User from "./user.model.js";
+import ApiSuccess from "../../../utils/apiSuccess.js";
+import ApiError from "../../../utils/apiError.js";
+import { paginate } from "../../../utils/paginate.js";
+import authService from "../../services/auth.service.js";
 
 export async function getAllUsers(query) {
   const { page = 1, limit = 10, search } = query;

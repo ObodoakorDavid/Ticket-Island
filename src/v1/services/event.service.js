@@ -48,7 +48,17 @@ export async function createEvent(eventData, userId, photo) {
 }
 
 export async function getAllEvents(query) {
-  const { page = 1, limit = 10, search, sortBy } = query;
+  const {
+    page = 1,
+    limit = 10,
+    search,
+    sortBy,
+    state,
+    country,
+    category,
+    startDate,
+    endDate,
+  } = query;
 
   const filterQuery = {
     isDeleted: false,
@@ -63,25 +73,47 @@ export async function getAllEvents(query) {
 
   let sort = { createdAt: -1 };
 
-  if (sortBy?.toLowerCase() === "upcoming") {
-    console.log("hhhh");
-
-    filterQuery.startTime = { $gte: new Date() };
-    sort = { startTime: 1 };
-  }
-
   if (search) {
     const searchQuery = {
       $or: [
         { title: { $regex: search, $options: "i" } },
-        { eventType: { $regex: search, $options: "i" } },
-        { state: { $regex: search, $options: "i" } },
-        { country: { $regex: search, $options: "i" } },
-        { address: { $regex: search, $options: "i" } },
+        { summary: { $regex: search, $options: "i" } },
+        // { eventType: { $regex: search, $options: "i" } },
+        // { state: { $regex: search, $options: "i" } },
+        // { country: { $regex: search, $options: "i" } },
+        // { address: { $regex: search, $options: "i" } },
       ],
     };
     Object.assign(filterQuery, searchQuery);
   }
+
+  if (sortBy?.toLowerCase() === "upcoming") {
+    filterQuery.startTime = { $gte: new Date() };
+    sort = { startTime: 1 };
+  }
+
+  if (state) {
+    filterQuery.state = { $regex: new RegExp(`^${state}$`, "i") };
+  }
+
+  if (category) {
+    filterQuery.category = { $regex: new RegExp(`^${category}$`, "i") };
+  }
+
+  if (country) {
+    filterQuery.country = { $regex: new RegExp(`^${country}$`, "i") };
+  }
+
+  if (startDate || endDate) {
+    if (startDate) {
+      filterQuery.startTime = { $gte: new Date(startDate) };
+    }
+    if (endDate) {
+      filterQuery.endTime = { $gte: new Date(endDate) };
+    }
+  }
+
+  console.log({ filterQuery });
 
   const { documents: events, pagination } = await paginate({
     model: Event,

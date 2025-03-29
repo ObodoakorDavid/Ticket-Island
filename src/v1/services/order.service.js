@@ -27,8 +27,81 @@ export async function getOrderById(orderId) {
   return order;
 }
 
-export async function getAllOrders(userId, query) {
-  const { page = 1, limit = 10, search } = query;
+export async function getAllOrders(query) {
+  const {
+    page = 1,
+    limit = 10,
+    reference,
+    startDate,
+    endDate,
+    userId,
+    search,
+  } = query;
+
+  const filterQuery = {};
+  const populateOptions = [
+    {
+      path: "user",
+      select: ["firstName", "lastName"],
+    },
+    {
+      path: "event",
+      select: ["title", "address"],
+    },
+    {
+      path: "eventTicket",
+      select: ["title", "address"],
+    },
+  ];
+
+  const sort = { createdAt: -1 };
+
+  if (search) {
+    const searchQuery = {
+      $or: [
+        { reference: { $regex: search, $options: "i" } },
+        { status: { $regex: search, $options: "i" } },
+      ],
+    };
+    Object.assign(filterQuery, searchQuery);
+  }
+
+  if (userId) {
+    filterQuery.user = userId;
+  }
+
+  if (reference) {
+    filterQuery.reference = reference;
+  }
+
+  if (startDate || endDate) {
+    filterQuery.createdAt = {};
+    if (startDate) {
+      filterQuery.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filterQuery.createdAt.$lte = new Date(endDate);
+    }
+  }
+
+  const { documents: orders, pagination } = await paginate({
+    model: Order,
+    query: filterQuery,
+    page,
+    limit,
+    sort,
+    populateOptions,
+    select: ["-qrcode"],
+  });
+
+  return ApiSuccess.ok("Orders Retrieved Successfully", {
+    orders,
+    pagination,
+  });
+}
+
+export async function getAllUserOrders(userId, query) {
+  const { page = 1, limit = 10, reference, startDate, endDate, search } = query;
 
   const filterQuery = { user: userId };
   const populateOptions = [
@@ -58,6 +131,20 @@ export async function getAllOrders(userId, query) {
     Object.assign(filterQuery, searchQuery);
   }
 
+  if (reference) {
+    filterQuery.reference = reference;
+  }
+
+  if (startDate || endDate) {
+    filterQuery.createdAt = {};
+    if (startDate) {
+      filterQuery.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filterQuery.createdAt.$lte = new Date(endDate);
+    }
+  }
+
   const { documents: orders, pagination } = await paginate({
     model: Order,
     query: filterQuery,
@@ -75,7 +162,7 @@ export async function getAllOrders(userId, query) {
 }
 
 export async function getOrganizerOrders(userId, query) {
-  const { page = 1, limit = 10, search } = query;
+  const { page = 1, limit = 10, reference, startDate, endDate, search } = query;
 
   const filterQuery = { organizer: userId };
   const populateOptions = [
@@ -99,6 +186,21 @@ export async function getOrganizerOrders(userId, query) {
       ],
     };
     Object.assign(filterQuery, searchQuery);
+  }
+
+  if (reference) {
+    filterQuery.reference = reference;
+  }
+
+  // Date filtering
+  if (startDate || endDate) {
+    filterQuery.createdAt = {};
+    if (startDate) {
+      filterQuery.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      filterQuery.createdAt.$lte = new Date(endDate);
+    }
   }
 
   const { documents: orders, pagination } = await paginate({
@@ -153,6 +255,7 @@ export async function resendOrderTicketsToEmail(orderId) {
 
 const orderService = {
   getAllOrders,
+  getAllUserOrders,
   getOrganizerOrders,
   getOrderById,
   getOrder,

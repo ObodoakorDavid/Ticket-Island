@@ -3,23 +3,25 @@ import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
 import { isAdmin, isAuth } from "../../middlewares/auth.js";
 import { eventUpdateValidatorForAdmin } from "../validators/event.validator.js";
 import {
+  activateWallet,
+  deactivateWallet,
   getAllEventsForAdmin,
   getAllPromotionalEmails,
-  getAllUsers,
   getPromotionalEmailById,
-  getSingleUser,
   updateEvent,
   updatePromotionalEmail,
-  updateUserRole,
 } from "../controllers/admin.controller.js";
-import { promotionalEmailUpdateValidator } from "../validators/promotionalEmail.validator.js";
+import { promotionalEmailUpdateValidator } from "../modules/promotionalEmail/promotionalEmail.validator.js";
 import {
   getAllTransactions,
   getTransactionById,
   updateTransaction,
 } from "../controllers/transaction.controller.js";
 import { updateTransactionValidator } from "../validators/transaction.validator.js";
-import { userRolesValidator } from "../validators/user.validator.js";
+import { getAllOrders, getOrder } from "../controllers/order.controller.js";
+import { userRolesValidator } from "../modules/user/user.validator.js";
+import { updateUserRole } from "../modules/user/user.controller.js";
+import { withdrawFromWallet } from "../modules/wallet/wallet.controller.js";
 
 const router = express.Router();
 
@@ -62,15 +64,24 @@ router
 //Roles
 router
   .route("/roles/:userId")
-  .put(isAuth, isAdmin, userRolesValidator, updateUserRole) // Get a single transaction by ID
+  .put(isAuth, isAdmin, userRolesValidator, updateUserRole)
   .all(methodNotAllowed);
 
-//Users
-router.route("/users").get(isAuth, isAdmin, getAllUsers).all(methodNotAllowed);
+//Wallet
+router
+  .route("/wallet/deactivate/:userId")
+  .get(isAuth, isAdmin, deactivateWallet)
+  .all(methodNotAllowed);
 
 router
-  .route("/users/:userId")
-  .get(isAuth, isAdmin, getSingleUser)
+  .route("/wallet/activate/:userId")
+  .get(isAuth, isAdmin, activateWallet)
   .all(methodNotAllowed);
+
+//Orders
+
+router.route("/orders").get(isAuth, getAllOrders).all(methodNotAllowed);
+
+router.route("/orders/:orderId").get(isAuth, getOrder).all(methodNotAllowed);
 
 export default router;

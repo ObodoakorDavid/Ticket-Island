@@ -40,6 +40,11 @@ const walletSchema = new Schema(
       type: String,
       default: () => `WALLET-${nanoid(10)}`,
       unique: true,
+      index: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   {

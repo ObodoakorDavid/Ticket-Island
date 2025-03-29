@@ -10,7 +10,6 @@ import {
   getCodeByName,
 } from "./code.service.js";
 import { calculateCommission } from "../../utils/calculations.js";
-import walletService from "./wallet.service.js";
 import { sendTicketsToEmail } from "../../utils/general.js";
 import Order from "../models/order.model.js";
 import orderService from "./order.service.js";
@@ -21,6 +20,7 @@ import { generateTicketPDF } from "../../utils/generateOTP.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { formatDate } from "../../lib/utils.js";
+import walletService from "../modules/wallet/wallet.service.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pdfDir = path.join(__dirname, "../../storage/");
@@ -241,7 +241,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
 }
 
 export async function getAllTickets(query) {
-  const { page = 1, limit = 10, search, ...filters } = query;
+  const { page = 1, limit = 10, search } = query;
 
   const filterQuery = { isDeleted: false };
 
@@ -256,11 +256,20 @@ export async function getAllTickets(query) {
     Object.assign(filterQuery, searchQuery);
   }
 
-  for (const key in filters) {
-    if (filters[key]) {
-      filterQuery[key] = filters[key];
-    }
-  }
+  const populateOptions = [
+    {
+      path: "user",
+      select: ["firstName", "lastName"],
+    },
+    {
+      path: "event",
+      select: ["title", "title", "summary", "eventType"],
+    },
+    {
+      path: "eventTicket",
+      select: ["type", "name", "summary", "price"],
+    },
+  ];
 
   const { documents: tickets, pagination } = await paginate({
     model: Ticket,
@@ -269,6 +278,7 @@ export async function getAllTickets(query) {
     limit,
     sort: { createdAt: -1 },
     select: ["-qrCode"],
+    populateOptions,
   });
 
   return ApiSuccess.ok("Tickets Retrieved Successfully", {

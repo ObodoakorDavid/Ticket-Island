@@ -40,14 +40,15 @@ const templates = {
 };
 
 const sendEmail = async ({
+  from = defaultSender,
+  replyTo = defaultSender,
   to,
   subject,
   text,
   html,
-  from = defaultSender,
   attachments = [],
 }) => {
-  const mailOptions = { from, to, subject, text, html, attachments };
+  const mailOptions = { from, to, subject, text, html, attachments, replyTo };
   const info = await transporter.sendMail(mailOptions);
   return info;
 };
@@ -97,22 +98,47 @@ const sendQRCodeEmail = async (email, userName, ticketPaths, eventName) => {
 
 const sendPromotionalEmail = async ({
   to = [],
+  from,
+  replyTo,
   subject,
-  message,
+  body,
   eventName,
-  // userName,
+  headerImage,
+  organizerName,
+  logo,
+  address,
+  city,
+  state,
+  country,
+  twitterLink,
+  instagramLink,
+  facebookLink,
+  //userName,
 }) => {
   const date = new Date().getFullYear();
-  const emailText = message;
+  const emailText = body;
   const html = templates.PromotionalEmail({
     eventName,
     // userName,
-    message,
+    subject,
+    body,
     date,
+    headerImage,
+    organizerName,
+    logo,
+    address,
+    city,
+    state,
+    country,
+    twitterLink,
+    instagramLink,
+    facebookLink,
   });
 
   return sendEmail({
     to,
+    from,
+    replyTo,
     subject,
     text: emailText,
     html,

@@ -1,6 +1,6 @@
 import { body } from "express-validator";
-import { handleValidationErrors } from "../../middlewares/error.js";
-import ApiError from "../../utils/apiError.js";
+import { handleValidationErrors } from "../../../middlewares/error.js";
+import ApiError from "../../../utils/apiError.js";
 
 export const userValidator = [
   body("firstName")

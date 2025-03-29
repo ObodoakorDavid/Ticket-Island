@@ -1,9 +1,9 @@
-import ApiError from "../../utils/apiError.js";
-import ApiSuccess from "../../utils/apiSuccess.js";
-import Transaction from "../models/transaction.model.js";
-import authService from "./auth.service.js";
-import paystackClient from "../../lib/paystackClient.js";
-import Wallet from "../models/wallet.model.js";
+import ApiError from "../../../utils/apiError.js";
+import ApiSuccess from "../../../utils/apiSuccess.js";
+import Transaction from "../../models/transaction.model.js";
+import authService from "../../services/auth.service.js";
+import paystackClient from "../../../lib/paystackClient.js";
+import Wallet from "./wallet.model.js";
 
 async function getWallet(userId) {
   const existingWallet = await Wallet.findOne({ user: userId });
@@ -78,6 +78,12 @@ async function withdrawWallet(userId, amount) {
     throw ApiError.forbidden("Please update your bank details");
   }
 
+  if (!wallet.isActive) {
+    throw ApiError.forbidden(
+      "Your wallet has been disabled. Please contact the admin"
+    );
+  }
+
   // Update the user's balance
   user.balance -= amount;
   await user.save();
@@ -143,6 +149,34 @@ async function updateWalletDetails(userId, walletDetails = {}) {
   }
 }
 
+// Deactivate Wallet
+async function deactivateWallet(userId) {
+  const wallet = await Wallet.findOne({ user: userId });
+
+  if (!wallet) {
+    throw ApiError.notFound("Wallet not found");
+  }
+
+  wallet.isActive = false;
+  await wallet.save();
+
+  return ApiSuccess.ok("Wallet deactivated successfully", { wallet });
+}
+
+// Activate Wallet
+async function activateWallet(userId) {
+  const wallet = await Wallet.findOne({ user: userId });
+
+  if (!wallet) {
+    throw ApiError.notFound("Wallet not found");
+  }
+
+  wallet.isActive = true;
+  await wallet.save();
+
+  return ApiSuccess.ok("Wallet activated successfully", { wallet });
+}
+
 // Banks
 async function getAllBanks() {
   try {
@@ -160,6 +194,8 @@ const walletService = {
   updateWalletDetails,
   getWallet,
   getWalletDetails,
+  activateWallet,
+  deactivateWallet,
 };
 
 export default walletService;

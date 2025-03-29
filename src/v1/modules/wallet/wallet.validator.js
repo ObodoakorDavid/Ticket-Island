@@ -1,5 +1,5 @@
 import { body } from "express-validator";
-import { handleValidationErrors } from "../../middlewares/error.js";
+import { handleValidationErrors } from "../../../middlewares/error.js";
 
 export const walletUpdateValidator = [
   body("bankCode")

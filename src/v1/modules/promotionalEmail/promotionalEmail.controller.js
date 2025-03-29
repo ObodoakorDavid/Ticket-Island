@@ -1,12 +1,14 @@
-import asyncWrapper from "../../middlewares/asyncWrapper.js";
-import promotionalEmailService from "../services/promotionalEmail.service.js";
+import asyncWrapper from "../../../middlewares/asyncWrapper.js";
+import promotionalEmailService from "./promotionalEmail.service.js";
 
 export const sendPromotionalEmail = asyncWrapper(async (req, res) => {
   const emailData = req.body;
   const { userId } = req.user;
+  const headerImage = req.files?.headerImage ? req.files.headerImage : null;
   const result = await promotionalEmailService.sendPromotionalEmail(
     emailData,
-    userId
+    userId,
+    headerImage
   );
   res.status(201).json(result);
 });

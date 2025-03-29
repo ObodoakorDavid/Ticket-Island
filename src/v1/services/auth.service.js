@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
+import User from "../modules/user/user.model.js";
 import { generateToken, verifyToken } from "../../config/token.js";
-import User from "../models/user.model.js";
 import OTP from "../models/otp.model.js";
 import ApiError from "../../utils/apiError.js";
 import { hashPassword, validatePassword } from "../../utils/validationUtils.js";

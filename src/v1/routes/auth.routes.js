@@ -11,7 +11,7 @@ import {
   verifyEmailToken,
 } from "../controllers/auth.controller.js";
 import { isAuth } from "../../middlewares/auth.js";
-import { userValidator } from "../validators/user.validator.js";
+import { userValidator } from "../modules/user/user.validator.js";
 
 const router = express.Router();
 

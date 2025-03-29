@@ -1,12 +1,12 @@
 import express from "express";
-import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
-import { isAuth } from "../../middlewares/auth.js";
-import { promotionalEmailValidator } from "../validators/promotionalEmail.validator.js";
+import { isAuth } from "../../../middlewares/auth.js";
+import { promotionalEmailValidator } from "./promotionalEmail.validator.js";
+import methodNotAllowed from "../../../middlewares/methodNotAllowed.js";
 import {
   getPromotionalEmailById,
   getUserPromotionalEmails,
   sendPromotionalEmail,
-} from "../controllers/promotionalEmail.controller.js";
+} from "./promotionalEmail.controller.js";
 
 const router = express.Router();
 

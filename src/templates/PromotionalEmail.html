@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Update On {{eventName}}</title>
+    <title>{{subject}}</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -28,6 +28,10 @@
       .email-header h1 {
         margin: 0;
         font-size: 24px;
+      }
+      .header-image {
+        width: 100%;
+        aspect-ratio: 16 / 9;
       }
       .email-body {
         padding: 20px;
@@ -57,6 +61,9 @@
   </head>
   <body>
     <div class="email-container">
+      <!-- Header Image -->
+      <img src="{{headerImage}}" class="header-image" alt="Header Image" />
+
       <!-- Header -->
       <div class="email-header">
         <h1>{{subject}}</h1>
@@ -65,15 +72,18 @@
       <!-- Body -->
       <div class="email-body">
         <!-- <h2>Hello {{userName}},</h2> -->
-        <p>{{message}}</p>
+        <p>{{body}}</p>
       </div>
 
       <!-- Footer -->
       <div class="email-footer">
+        <p>{{organizerName}}</p>
+        <p>{{address}}, {{city}}, {{state}}, {{country}}</p>
+        <p>© {{date}} {{organizerName}}. All rights reserved.</p>
         <p>
-          Need help? <a href="mailto:support@yourapp.com">Contact Support</a>.
+          <a href="mailto:support@yourapp.com">Unsubscribe</a> |
+          <a href="mailto:support@yourapp.com">Privacy Policy</a>
         </p>
-        <p>© {{date}} Ticket Island. All rights reserved.</p>
       </div>
     </div>
   </body>

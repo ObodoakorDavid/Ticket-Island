@@ -1,6 +1,6 @@
-import asyncWrapper from "../../middlewares/asyncWrapper.js";
-import transactionService from "../services/transaction.service.js";
-import walletService from "../services/wallet.service.js";
+import walletService from "./wallet.service.js";
+import asyncWrapper from "../../../middlewares/asyncWrapper.js";
+import transactionService from "../../services/transaction.service.js";
 
 // Controller to withdraw funds from the user's wallet
 export const withdrawFromWallet = asyncWrapper(async (req, res) => {

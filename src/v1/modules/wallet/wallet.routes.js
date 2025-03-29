@@ -1,17 +1,17 @@
 import express from "express";
-import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
 import {
-  getAllBanks,
-  getTransactionHistory,
   getWalletDetails,
   updateWalletDetails,
   withdrawFromWallet,
-} from "../controllers/wallet.controller.js";
-import { isAuth } from "../../middlewares/auth.js";
+  getTransactionHistory,
+  getAllBanks,
+} from "./wallet.controller.js";
 import {
   walletUpdateValidator,
   walletWithdrawValidator,
-} from "../validators/wallet.validator.js";
+} from "./wallet.validator.js";
+import methodNotAllowed from "../../../middlewares/methodNotAllowed.js";
+import { isAuth } from "../../../middlewares/auth.js";
 
 const router = express.Router();
 

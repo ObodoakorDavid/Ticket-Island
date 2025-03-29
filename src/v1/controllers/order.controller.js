@@ -3,8 +3,14 @@ import orderService from "../services/order.service.js";
 
 export const getAllOrders = asyncWrapper(async (req, res) => {
   const query = req.query;
+  const result = await orderService.getAllOrders(query);
+  res.status(200).json(result);
+});
+
+export const getAllUserOrders = asyncWrapper(async (req, res) => {
+  const query = req.query;
   const { userId } = req.user;
-  const result = await orderService.getAllOrders(userId, query);
+  const result = await orderService.getAllUserOrders(userId, query);
   res.status(200).json(result);
 });
 
@@ -26,18 +32,3 @@ export const resendOrderTicketsToEmail = asyncWrapper(async (req, res) => {
   const result = await orderService.resendOrderTicketsToEmail(orderId);
   res.status(200).json(result);
 });
-
-// export const updateOrder = asyncWrapper(async (req, res) => {
-//   const { orderId } = req.params;
-//   const orderData = req.body;
-//   const { userId } = req.user;
-//   const result = await orderService.updateOrder(orderId, orderData, userId);
-//   res.status(200).json(result);
-// });
-
-// export const deleteOrder = asyncWrapper(async (req, res) => {
-//   const { orderId } = req.params;
-//   const { userId } = req.user;
-//   const result = await orderService.deleteOrder(orderId, userId);
-//   res.status(200).json(result);
-// });

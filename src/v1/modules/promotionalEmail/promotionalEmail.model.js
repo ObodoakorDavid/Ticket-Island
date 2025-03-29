@@ -14,13 +14,33 @@ const promotionalEmailSchema = new Schema(
       ref: "User",
       required: true,
     },
-    subject: {
+    headerImage: {
       type: String,
       required: true,
+      trim: true,
     },
-    message: {
+    from: {
+      trim: true,
       type: String,
       required: true,
+      trim: true,
+    },
+    replyTo: {
+      trim: true,
+      type: String,
+      required: true,
+      trim: true,
+    },
+    subject: {
+      trim: true,
+      type: String,
+      required: true,
+      trim: true,
+    },
+    body: {
+      type: String,
+      required: true,
+      trim: true,
     },
     status: {
       type: String,
