@@ -1,7 +1,5 @@
 import express from "express";
-import methodNotAllowed from "../../middlewares/methodNotAllowed.js";
-import { isAdmin, isAuth } from "../../middlewares/auth.js";
-import { eventUpdateValidatorForAdmin } from "../validators/event.validator.js";
+import { eventUpdateValidatorForAdmin } from "../../validators/event.validator.js";
 import {
   activateWallet,
   deactivateWallet,
@@ -10,18 +8,23 @@ import {
   getPromotionalEmailById,
   updateEvent,
   updatePromotionalEmail,
-} from "../controllers/admin.controller.js";
-import { promotionalEmailUpdateValidator } from "../modules/promotionalEmail/promotionalEmail.validator.js";
+} from "./admin.controller.js";
+import { userRolesValidator } from "../user/user.validator.js";
+import {
+  getAllUsers,
+  getSingleUser,
+  updateUserRole,
+} from "../user/user.controller.js";
+import { isAdmin, isAuth } from "../../../middlewares/auth.js";
+import { promotionalEmailUpdateValidator } from "../promotionalEmail/promotionalEmail.validator.js";
 import {
   getAllTransactions,
   getTransactionById,
   updateTransaction,
-} from "../controllers/transaction.controller.js";
-import { updateTransactionValidator } from "../validators/transaction.validator.js";
-import { getAllOrders, getOrder } from "../controllers/order.controller.js";
-import { userRolesValidator } from "../modules/user/user.validator.js";
-import { updateUserRole } from "../modules/user/user.controller.js";
-import { withdrawFromWallet } from "../modules/wallet/wallet.controller.js";
+} from "../../controllers/transaction.controller.js";
+import { updateTransactionValidator } from "../../validators/transaction.validator.js";
+import { getAllOrders, getOrder } from "../../controllers/order.controller.js";
+import methodNotAllowed from "../../../middlewares/methodNotAllowed.js";
 
 const router = express.Router();
 
@@ -83,5 +86,13 @@ router
 router.route("/orders").get(isAuth, getAllOrders).all(methodNotAllowed);
 
 router.route("/orders/:orderId").get(isAuth, getOrder).all(methodNotAllowed);
+
+//Users
+router.route("/users").get(isAuth, isAdmin, getAllUsers).all(methodNotAllowed);
+
+router
+  .route("/users/:userId")
+  .get(isAuth, isAdmin, getSingleUser)
+  .all(methodNotAllowed);
 
 export default router;

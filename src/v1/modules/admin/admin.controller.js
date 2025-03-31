@@ -1,8 +1,8 @@
-import asyncWrapper from "../../middlewares/asyncWrapper.js";
-import promotionalEmailService from "../modules/promotionalEmail/promotionalEmail.service.js";
-import walletService from "../modules/wallet/wallet.service.js";
-import adminService from "../services/admin.service.js";
-import eventService from "../services/event.service.js";
+
+import asyncWrapper from "../../../middlewares/asyncWrapper.js";
+import promotionalEmailService from "../promotionalEmail/promotionalEmail.service.js";
+import walletService from "../wallet/wallet.service.js";
+import adminService from "./admin.service.js";
 
 // Events
 export const getAllEventsForAdmin = asyncWrapper(async (req, res) => {

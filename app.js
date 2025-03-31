@@ -14,7 +14,7 @@ import eventRoutesV1 from "./src/v1/routes/event.routes.js";
 import ticketRoutesV1 from "./src/v1/routes/ticket.routes.js";
 import codeRoutesV1 from "./src/v1/routes/code.routes.js";
 import orderRoutesV1 from "./src/v1/routes/order.routes.js";
-import adminRoutesV1 from "./src/v1/routes/admin.routes.js";
+import adminRoutesV1 from "./src/v1/modules/admin/admin.routes.js";
 import promotionalEmailRoutesV1 from "./src/v1/modules/promotionalEmail/promotionalEmail.routes.js";
 import walletRoutesV1 from "./src/v1/modules/wallet/wallet.routes.js";
 import transactionRoutesV1 from "./src/v1/routes/transaction.routes.js";
