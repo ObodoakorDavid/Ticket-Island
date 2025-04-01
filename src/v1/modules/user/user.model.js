@@ -62,7 +62,7 @@ const UserSchema = new Schema(
     },
     ticketScanned: {
       type: Number,
-      default: 0, // Default cashback balance is 0
+      default: 0, // Default ticket scanned is 0
       min: [0, "Ticket scanned cannot be negative"],
     },
   },

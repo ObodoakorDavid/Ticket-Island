@@ -327,7 +327,7 @@ export async function updateTicket(ticketId, data, userId) {
   });
 }
 
-export async function scanTicket(ticketId) {
+export async function scanTicket(ticketId, userId) {
   const ticket = await Ticket.findById(ticketId);
 
   if (!ticket) {
@@ -337,6 +337,10 @@ export async function scanTicket(ticketId) {
   if (ticket.hasBeenScanned) {
     throw ApiError.badRequest("This ticket has been scanned");
   }
+
+  const user = await authService.findUserByIdOrEmail(userId);
+  user.ticketScanned += 1;
+  await user.save();
 
   ticket.hasBeenScanned = true;
   await ticket.save();
@@ -393,10 +397,15 @@ export async function generateNewTickets(orderId) {
     createdTickets.push(newTicket);
 
     // Step 2: Generate QR code using the ticket ID
+    // const qrCodeData = await QRCode.toDataURL(
+    //   `${
+    //     process.env.SERVER_BASE_URL
+    //   }/api/v1/tickets/${newTicket._id.toString()}`
+    // );
     const qrCodeData = await QRCode.toDataURL(
       `${
-        process.env.SERVER_BASE_URL
-      }/api/v1/tickets/${newTicket._id.toString()}`
+        process.env.CLIENT_BASE_URL
+      }/activator-dashboard/${newTicket._id.toString()}}`
     );
 
     // Update the ticket with the generated QR code
