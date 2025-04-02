@@ -1,6 +1,6 @@
-
 import asyncWrapper from "../../../middlewares/asyncWrapper.js";
 import promotionalEmailService from "../promotionalEmail/promotionalEmail.service.js";
+import eventService from "../../services/event.service.js";
 import walletService from "../wallet/wallet.service.js";
 import adminService from "./admin.service.js";
 

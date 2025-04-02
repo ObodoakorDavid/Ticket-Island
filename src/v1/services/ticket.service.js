@@ -405,7 +405,7 @@ export async function generateNewTickets(orderId) {
     const qrCodeData = await QRCode.toDataURL(
       `${
         process.env.CLIENT_BASE_URL
-      }/activator-dashboard/${newTicket._id.toString()}}`
+      }/activator/ticket/scan/${newTicket._id.toString()}}`
     );
 
     // Update the ticket with the generated QR code
