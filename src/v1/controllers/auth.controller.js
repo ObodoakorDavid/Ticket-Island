@@ -55,5 +55,6 @@ export const resetPassword = asyncWrapper(async (req, res) => {
 export const verifyEmailToken = asyncWrapper(async (req, res) => {
   const { token } = req.query;
   const result = await verifyEmailInService(token);
-  res.status(200).json(result);
+  res.redirect(`${process.env.CLIENT_BASE_URL}/auth/login`);
+  // res.status(200).json(result);
 });

@@ -1,13 +1,5 @@
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import QRCode from "qrcode";
-import { generateTicketPDF } from "./generateOTP.js";
-import Ticket from "../v1/models/ticket.model.js";
 import emailUtils from "./emailUtils.js";
-import { formatDate } from "../lib/utils.js";
-import orderService from "../v1/services/order.service.js";
-import { generateNewTickets } from "../v1/services/ticket.service.js";
 
 export const sendTicketsToEmail = async ({
   userEmail,
