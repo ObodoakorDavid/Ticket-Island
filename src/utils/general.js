@@ -17,6 +17,7 @@ export const sendTicketsToEmail = async ({
       eventName
     );
 
+    console.log("Email sent successfully");
     emailSent = true;
   } catch (error) {
     console.log("Error sending the QRCode to email", error);

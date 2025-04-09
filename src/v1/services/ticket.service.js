@@ -110,10 +110,11 @@ export async function buyTicket(ticketData, userId) {
 
   if (useCashbackBalance && shouldUseCashBalance) {
     // const user = await authService.findUserByIdOrEmail(userId);
-    const newPriceToPay = priceToPay - user.cashbackBalance;
+    const newPriceToPay = priceToPay - user.cashbackBalance.toFixed(2);
     order.cashBackUsed = true;
-    order.cashBackAmount = user.cashbackBalance;
+    order.cashBackAmount = user.cashbackBalance.toFixed(2);
     priceToPay = newPriceToPay;
+    order.netPrice = newPriceToPay;
   }
 
   if (priceToPay <= 0) {
@@ -153,8 +154,6 @@ export async function buyTicket(ticketData, userId) {
     priceToPay = newPriceToPay;
     order.netPrice = newPriceToPay;
   }
-
-  // const user = await authService.findUserByIdOrEmail(userId);
 
   const { authorizationUrl } = await payWithPayStack(
     user.email,
@@ -206,7 +205,7 @@ export async function handlePaymentSuccess(transactionId, transactionRef) {
 
   // Give cashback
   const cashbackAmount = order.netPrice * 0.001;
-  user.cashbackBalance = cashbackAmount;
+  user.cashbackBalance = cashbackAmount.toFixed(2);
   await user.save();
 
   // Increment Promo code usage
