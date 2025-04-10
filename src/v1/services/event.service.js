@@ -21,6 +21,8 @@ export async function getEventById(eventIdOrSlug, populateOptions = []) {
 export async function createEvent(eventData, userId, photo) {
   const { isApproved, ...otherEventData } = eventData;
 
+  // return ApiSuccess.ok("Event Created Successfully");
+
   // Upload photo to Cloudinary if provided
   let photoUrl = "";
   if (photo) {
@@ -28,6 +30,8 @@ export async function createEvent(eventData, userId, photo) {
       photoUrl = await uploadService.uploadToCloudinary(photo.tempFilePath);
       console.log({ photoUrl });
     } catch (error) {
+      console.log({ error });
+
       throw ApiError.internalServerError(
         "Failed to upload event photo, file too large"
       );

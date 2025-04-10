@@ -154,6 +154,44 @@ export async function resetPassword({ email, otp, password }) {
   return ApiSuccess.ok("Password Updated");
 }
 
+export const resendVerificationEmailService = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw ApiError.badRequest("No User with this email");
+  }
+
+  if (user.isVerified) {
+    throw ApiError.badRequest("Email already verified");
+  }
+
+  const token = generateToken(
+    {
+      email: user.email,
+      userId: user._id,
+      roles: user.roles,
+    },
+    "1h"
+  );
+
+  const magicLink = `${process.env.SERVER_BASE_URL}/api/v1/auth/verify-email?token=${token}`;
+
+  try {
+    const emailInfo = await emailUtils.sendMagicLinkEmail(
+      user.email,
+      user.firstName,
+      magicLink
+    );
+
+    return ApiSuccess.created(
+      `Email has been sent to ${emailInfo.envelope.to}`,
+      { email: user.email, id: user._id }
+    );
+  } catch (error) {
+    console.log("Error sending email", error);
+    return ApiError.internalServerError(`Failed to send email`);
+  }
+};
+
 export const verifyEmailToken = async (token) => {
   if (!token) {
     throw ApiError.badRequest("Token is required");
@@ -227,6 +265,7 @@ const authService = {
   verifyEmailToken,
   addUserToMailingList,
   addOrganizerRole,
+  resendVerificationEmailService,
 };
 
 export default authService;

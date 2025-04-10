@@ -72,7 +72,7 @@ async function withdrawWallet(userId, amount) {
     throw ApiError.badRequest("Insufficient balance");
   }
 
-  const wallet = await Wallet.findOne({ user: userId });
+  const wallet = await getWallet(userId);
 
   if (!wallet.isSubmitted) {
     throw ApiError.forbidden("Please update your bank details");

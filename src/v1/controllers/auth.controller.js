@@ -8,6 +8,7 @@ import {
   forgotPassword as handleForgotPassword,
   resetPassword as handleResetPassword,
   verifyEmailToken as verifyEmailInService,
+  resendVerificationEmailService,
 } from "../../v1/services/auth.service.js";
 
 export const register = asyncWrapper(async (req, res) => {
@@ -57,4 +58,10 @@ export const verifyEmailToken = asyncWrapper(async (req, res) => {
   const result = await verifyEmailInService(token);
   res.redirect(`${process.env.CLIENT_BASE_URL}/auth/login`);
   // res.status(200).json(result);
+});
+
+export const resendEmailVerification = asyncWrapper(async (req, res) => {
+  const { email } = req.body;
+  const result = await resendVerificationEmailService(email);
+  res.status(200).json(result);
 });

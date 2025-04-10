@@ -9,6 +9,7 @@ import {
   sendOTP,
   verifyOTP,
   verifyEmailToken,
+  resendEmailVerification,
 } from "../controllers/auth.controller.js";
 import { isAuth } from "../../middlewares/auth.js";
 import { userValidator } from "../modules/user/user.validator.js";
@@ -28,5 +29,9 @@ router.route("/signin").post(login).all(methodNotAllowed);
 router.route("/forgot-password").post(forgotPassword).all(methodNotAllowed);
 router.route("/reset-password").post(resetPassword).all(methodNotAllowed);
 router.route("/verify-email").get(verifyEmailToken).all(methodNotAllowed);
+router
+  .route("/resend-email")
+  .get(resendEmailVerification)
+  .all(methodNotAllowed);
 
 export default router;
