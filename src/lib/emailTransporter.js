@@ -1,13 +1,12 @@
 import nodemailer from "nodemailer";
-import env from "dotenv";
-
-env.config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const createTransporter = () =>
   nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
-    secure: false,
+    secure: process.env.NODE_ENV === "production",
     auth: {
       user: process.env.BREVO_EMAIL,
       pass: process.env.BREVO_PASSWORD,

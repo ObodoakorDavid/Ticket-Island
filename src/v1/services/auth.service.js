@@ -58,7 +58,7 @@ export async function register(userData = {}) {
     "1h"
   );
 
-  const magicLink = `${process.env.CLIENT_BASE_URL}/api/v1/auth/verify-email?token=${token}`;
+  const magicLink = `${process.env.SERVER_BASE_URL}/api/v1/auth/verify-email?token=${token}`;
 
   try {
     const emailInfo = await emailUtils.sendMagicLinkEmail(

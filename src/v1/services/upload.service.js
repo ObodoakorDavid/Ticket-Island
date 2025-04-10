@@ -10,7 +10,9 @@ const uploadToCloudinary = async (tempFilePath) => {
     });
     return secure_url;
   } catch (error) {
-    throw new ApiError(500, `Error uploading to Cloudinary: ${error.message}`);
+    throw ApiError.internalServerError(
+      `Error uploading to Cloudinary: ${error.message}`
+    );
   }
 };
 

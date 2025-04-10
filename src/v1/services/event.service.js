@@ -28,9 +28,8 @@ export async function createEvent(eventData, userId, photo) {
       photoUrl = await uploadService.uploadToCloudinary(photo.tempFilePath);
       console.log({ photoUrl });
     } catch (error) {
-      throw new ApiError.internalServerError(
-        500,
-        "Failed to upload event photo"
+      throw ApiError.internalServerError(
+        "Failed to upload event photo, file too large"
       );
     }
   }
